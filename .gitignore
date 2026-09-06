@@ -1,0 +1,66 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env
+
+# ===== Data files (too large for git) =====
+data/raw/
+data/processed/
+data/features/
+data/results/*.csv
+data/results/*.parquet
+# Keep result images for documentation
+!data/results/*.png
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Node / React =====
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+htmlcov/
+tests/tmp_models/
+
+# ===== OS =====
+*.tmp
+*.bak
+desktop.ini
+
+# ===== Misc =====
+.agents/
+MPLADS_MASTER_PROMPT.md
+PROGRESS_UPDATE.md

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mplads-config
+data:
+  ENVIRONMENT: "production"
+  PORT: "8000"
+
