@@ -2,10 +2,11 @@ providers = ["python"]
 
 [variables]
 NIXPACKS_PYTHON_VERSION = "3.11"
+NIXPACKS_NODE_VERSION = "20"
 CI = "false"
 
 [phases.setup]
-nixPkgs = ["...", "nodejs_18"]
+nixPkgs = ["...", "nodejs_20"]
 
 [phases.build]
 cmds = [
