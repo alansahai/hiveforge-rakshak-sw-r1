@@ -57,10 +57,18 @@ def train_fraud_classifier(df_features: pd.DataFrame, output_dir: Path = MODELS_
     else:
         y = generate_synthetic_fraud_labels(df_features).values
         
+    # Direct generator features excluded to prevent trivial mathematical leakage
+    leakage_cols = [
+        'duplicate_work_score',
+        'ghost_project_indicator',
+        'cost_inflation_flag',
+        'contractor_concurrency',
+        'cost_round_number_flag'
+    ]
     exclude_cols = [
         'project_id', 'approval_id', 'is_fraud', 'risk_score',
         'overall_fraud_probability', 'audit_trigger_score', 'escalation_priority_score'
-    ]
+    ] + leakage_cols
     feature_cols = [
         c for c in df_features.columns 
         if c not in exclude_cols and pd.api.types.is_numeric_dtype(df_features[c])
