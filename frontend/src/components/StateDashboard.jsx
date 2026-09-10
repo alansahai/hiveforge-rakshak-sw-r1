@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchStateDashboard, fetchProjects, fetchStatesAndDistricts, formatCrore, formatLakh } from '../api/client';
 import ProjectDetailModal from './ProjectDetailModal';
+import ContractorNetworkGraph from './ContractorNetworkGraph';
 
 export default function StateDashboard() {
   const [states, setStates] = useState([]);
@@ -348,6 +349,11 @@ export default function StateDashboard() {
               )}
             </div>
           )}
+
+          {/* State-Level Contractor-District Network */}
+          <div style={{ marginTop: 24 }}>
+            <ContractorNetworkGraph defaultState={selectedState} />
+          </div>
         </>
       )}
 

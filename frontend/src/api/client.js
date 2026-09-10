@@ -164,6 +164,16 @@ export const fetchMinistryDashboard = async () => {
   }
 };
 
+export const fetchContractorNetwork = async (params = {}) => {
+  try {
+    const res = await api.get('/api/dashboard/contractor-network', { params });
+    return res.data;
+  } catch (err) {
+    console.error('Contractor network error:', err);
+    return { nodes: [], edges: [], summary: {} };
+  }
+};
+
 export const fetchMinistryInsights = async () => {
   try {
     const res = await api.get('/api/dashboard/ministry-insights');

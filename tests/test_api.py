@@ -99,6 +99,14 @@ class TestAPI(unittest.TestCase):
         # Reset DEMO_MODE to true
         os.environ["DEMO_MODE"] = "true"
 
+    def test_contractor_network_endpoint(self):
+        response = self.client.get("/api/dashboard/contractor-network?limit_contractors=10")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("nodes", data)
+        self.assertIn("edges", data)
+        self.assertIn("summary", data)
+
 if __name__ == '__main__':
     unittest.main()
 

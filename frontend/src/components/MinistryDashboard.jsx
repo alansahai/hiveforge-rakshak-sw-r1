@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { fetchMinistryDashboard, fetchMinistryInsights, formatCrore } from '../api/client';
+import ContractorNetworkGraph from './ContractorNetworkGraph';
 
 const RISK_PIE_COLORS = ['#22c55e', '#f59e0b', '#f97316', '#ef4444'];
 
@@ -163,6 +164,9 @@ export default function MinistryDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Interactive AI Contractor Network Graph */}
+      <ContractorNetworkGraph />
 
       {/* Policy Insights */}
       {insights && insights.insights && (

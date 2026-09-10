@@ -327,6 +327,11 @@ def load_and_clean_data(file_path: Path = None) -> pd.DataFrame:
                 
     # Priority 3: Synthetic fallback
     if df is None:
+        logger.warning("=" * 72)
+        logger.warning("⚠️  PROMINENT WARNING: FALLING BACK TO SYNTHETIC MPLADS DATA GENERATOR!")
+        logger.warning("⚠️  Real MoSPI Lok Sabha / Rajya Sabha Excel datasets were not found.")
+        logger.warning("⚠️  Generating synthetic dataset (2,000 records) for demonstration.")
+        logger.warning("=" * 72)
         df = create_synthetic_data(RAW_DATA_PATH, n_records=2000)
         
     initial_rows = len(df)

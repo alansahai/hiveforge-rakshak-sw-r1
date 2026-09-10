@@ -150,7 +150,10 @@ class MPLADSOrchestrator:
             self._download_mplads_data(raw_data_path)
             logger.info(f"{LogColors.OKGREEN}✅ Data downloaded successfully.{LogColors.ENDC}")
         except Exception as e:
-            logger.warning(f"{LogColors.WARNING}⚠️ Direct download unavailable ({str(e)}). Generating realistic synthetic data...{LogColors.ENDC}")
+            logger.warning("=" * 72)
+            logger.warning(f"⚠️  PROMINENT WARNING: DIRECT DOWNLOAD UNAVAILABLE ({str(e)})!")
+            logger.warning("⚠️  FALLING BACK TO SYNTHETIC MPLADS DATA GENERATION (2,000 records).")
+            logger.warning("=" * 72)
             self._create_synthetic_mplads_data(raw_data_path)
             logger.info(f"{LogColors.OKGREEN}✅ Synthetic MPLADS dataset generated (2000 records).{LogColors.ENDC}")
     

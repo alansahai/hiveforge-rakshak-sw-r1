@@ -603,3 +603,118 @@ def get_single_project_query(project_id: str = Query(...)):
     """Fetches comprehensive details of a single project by project_id query parameter."""
     return get_single_project(project_id)
 
+
+@router.get("/contractor-network", summary="Contractor-district bipartite relationship graph")
+def get_contractor_network(
+    state: Optional[str] = Query(None, description="Optional state filter"),
+    min_projects: int = Query(2, ge=1, description="Minimum projects per contractor to include"),
+    limit_contractors: int = Query(30, ge=5, le=100, description="Max contractors to include")
+):
+    """
+    Returns graph data (nodes & edges) of contractor-to-district relationships.
+    Identifies high-risk contractors, cross-district operations, and concentration clusters.
+    """
+    cache_key = f"dashboard:contractor_network:{state or 'all'}:{min_projects}:{limit_contractors}"
+    cached = cache_service.get_cached_result(cache_key)
+    if cached:
+        return cached
+
+    df = _get_master_data()
+    if df.empty or 'contractor' not in df.columns or 'district' not in df.columns:
+        return {"nodes": [], "edges": [], "summary": {}}
+
+    if state:
+        df = df[df['state'].astype(str).str.lower() == state.lower()]
+
+    # Filter out generic/empty contractor names
+    excluded_names = {'nan', 'none', 'unknown', '', 'state agency', 'district implementing agency', 'panchayat'}
+    valid_mask = ~df['contractor'].astype(str).str.strip().str.lower().isin(excluded_names)
+    df_valid = df[valid_mask].copy()
+
+    if df_valid.empty:
+        return {"nodes": [], "edges": [], "summary": {}}
+
+    # Group by contractor to find top contractors
+    contractor_groups = df_valid.groupby('contractor')
+    contractor_counts = contractor_groups.size()
+    top_contractor_names = contractor_counts[contractor_counts >= min_projects].sort_values(ascending=False).head(limit_contractors).index
+
+    if len(top_contractor_names) == 0:
+        top_contractor_names = contractor_counts.sort_values(ascending=False).head(limit_contractors).index
+
+    df_subset = df_valid[df_valid['contractor'].isin(top_contractor_names)]
+
+    nodes = []
+    edges = []
+    district_nodes_set = set()
+
+    for c_name in top_contractor_names:
+        cg = df_subset[df_subset['contractor'] == c_name]
+        p_count = len(cg)
+        sanc_total = float(pd.to_numeric(cg['amount_sanctioned'], errors='coerce').sum())
+        spent_total = float(pd.to_numeric(cg['amount_spent'], errors='coerce').sum())
+        c_risk = float(round(pd.to_numeric(cg.get('risk_score', 0), errors='coerce').mean(), 1))
+        is_high = c_risk >= 60.0
+        c_districts = list(cg['district'].dropna().unique())
+        concurrency = len(c_districts) > 1 or p_count >= 5
+
+        c_node_id = f"c_{str(c_name).replace(' ', '_')[:30]}"
+        nodes.append({
+            "id": c_node_id,
+            "name": str(c_name),
+            "type": "contractor",
+            "project_count": p_count,
+            "total_sanctioned": sanc_total,
+            "total_spent": spent_total,
+            "avg_risk_score": c_risk,
+            "is_high_risk": is_high,
+            "concurrency_flag": concurrency,
+            "district_count": len(c_districts)
+        })
+
+        # Edges to districts
+        for dist_name, dg in cg.groupby('district'):
+            clean_dist = str(dist_name).strip()
+            if not clean_dist or clean_dist.lower() in ('nan', 'none', ''):
+                continue
+            d_node_id = f"d_{clean_dist.replace(' ', '_')[:30]}"
+
+            if d_node_id not in district_nodes_set:
+                district_nodes_set.add(d_node_id)
+                d_state = str(dg['state'].iloc[0]) if 'state' in dg.columns else ''
+                d_total_p = len(df_valid[df_valid['district'] == dist_name])
+                nodes.append({
+                    "id": d_node_id,
+                    "name": clean_dist,
+                    "type": "district",
+                    "state": d_state,
+                    "project_count": d_total_p
+                })
+
+            edge_sanc = float(pd.to_numeric(dg['amount_sanctioned'], errors='coerce').sum())
+            edge_risk = float(round(pd.to_numeric(dg.get('risk_score', 0), errors='coerce').mean(), 1))
+            edges.append({
+                "source": c_node_id,
+                "target": d_node_id,
+                "project_count": len(dg),
+                "total_value": edge_sanc,
+                "avg_risk": edge_risk,
+                "is_high_risk": edge_risk >= 60.0
+            })
+
+    high_risk_count = sum(1 for n in nodes if n["type"] == "contractor" and n["is_high_risk"])
+    cross_dist_count = sum(1 for n in nodes if n["type"] == "contractor" and n["district_count"] > 1)
+
+    result = {
+        "nodes": nodes,
+        "edges": edges,
+        "summary": {
+            "total_contractors": len(top_contractor_names),
+            "total_districts": len(district_nodes_set),
+            "high_risk_contractors": high_risk_count,
+            "cross_district_contractors": cross_dist_count
+        }
+    }
+    cache_service.set_cache(cache_key, result, ttl=DASHBOARD_CACHE_TTL)
+    return result
+
