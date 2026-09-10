@@ -404,6 +404,8 @@ def get_projects(
     district: Optional[str] = Query(None),
     risk_category: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None, description="Filter sanction/approval date >= start_date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Filter sanction/approval date <= end_date (YYYY-MM-DD)"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     sort_by: str = Query("risk_score"),
@@ -411,7 +413,7 @@ def get_projects(
 ):
     """
     7. GET /api/dashboard/projects
-    Returns paginated, filterable, sortable project list for frontend tables.
+    Returns paginated, filterable, sortable project list for frontend tables with date-range filtering.
     """
     df = _get_master_data()
     if df.empty:
@@ -426,6 +428,23 @@ def get_projects(
         df = df[df['risk_category'].astype(str).str.lower() == risk_category.lower()]
     if category:
         df = df[df['category'].astype(str).str.lower() == category.lower()]
+
+    # Date-range filtering on sanction/approval date
+    if (start_date or end_date) and 'approval_date' in df.columns:
+        app_dt = pd.to_datetime(df['approval_date'], errors='coerce')
+        if start_date:
+            try:
+                s_dt = pd.to_datetime(start_date)
+                df = df[app_dt >= s_dt]
+                app_dt = pd.to_datetime(df['approval_date'], errors='coerce')
+            except Exception as e:
+                logger.warning(f"Error filtering by start_date {start_date}: {e}")
+        if end_date:
+            try:
+                e_dt = pd.to_datetime(end_date)
+                df = df[app_dt <= e_dt]
+            except Exception as e:
+                logger.warning(f"Error filtering by end_date {end_date}: {e}")
 
     total = len(df)
 
@@ -451,7 +470,10 @@ def get_projects(
             "risk_category": str(row.get('risk_category', 'low')),
             "contractor": str(row.get('contractor', '')),
             "mp_name": str(row.get('mp_name', '')),
-            "work_description": str(row.get('work_description', ''))[:80]
+            "work_description": str(row.get('work_description', ''))[:80],
+            "approval_date": str(row.get('approval_date', ''))[:10] if pd.notna(row.get('approval_date')) else None,
+            "completion_date": str(row.get('completion_date', ''))[:10] if pd.notna(row.get('completion_date')) else None,
+            "geo_duplicate_flag": int(row.get('geo_duplicate_flag', 0)) if pd.notna(row.get('geo_duplicate_flag')) else 0
         })
 
     return {

@@ -13,6 +13,8 @@ export default function DistrictDashboard() {
   const [loading, setLoading] = useState(true);
   const [allDistrictProjects, setAllDistrictProjects] = useState([]);
   const [riskFilter, setRiskFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
 
   // 1. Fetch States and their Districts mapping on mount
@@ -53,12 +55,18 @@ export default function DistrictDashboard() {
       setData(d);
       setLoading(false);
     });
+  }, [selectedState, selectedDistrict]);
 
-    // Also fetch full list of projects in this district
-    fetchProjects({ state: selectedState, district: selectedDistrict, page_size: 50 }).then(res => {
+  // 4. Load projects with optional date-range filters
+  useEffect(() => {
+    if (!selectedState || !selectedDistrict) return;
+    const params = { state: selectedState, district: selectedDistrict, page_size: 100 };
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    fetchProjects(params).then(res => {
       setAllDistrictProjects(res.projects || []);
     });
-  }, [selectedState, selectedDistrict]);
+  }, [selectedState, selectedDistrict, startDate, endDate]);
 
   const filteredProjects = allDistrictProjects.filter(p => {
     if (riskFilter === 'all') return true;
@@ -228,56 +236,97 @@ export default function DistrictDashboard() {
 
           {/* Comprehensive District Projects Table with Risk Filters */}
           <div className="panel">
-            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div>
-                <h3 style={{ margin: 0 }}>📋 All Projects in {selectedDistrict}</h3>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Showing {filteredProjects.length} projects • Click any row or button to view project details
-                </span>
+            <div className="panel-header" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap' }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>📋 All Projects in {selectedDistrict}</h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Showing {filteredProjects.length} projects • Click any row or button to view project details
+                  </span>
+                </div>
+
+                {/* Risk Filter Buttons */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                  <button
+                    className={`btn ${riskFilter === 'all' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+                    onClick={() => setRiskFilter('all')}
+                  >
+                    All ({allDistrictProjects.length})
+                  </button>
+                  <button
+                    className={`btn ${riskFilter === 'low' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+                    style={riskFilter === 'low' ? { background: 'var(--risk-low)', borderColor: 'var(--risk-low)' } : { color: 'var(--risk-low)' }}
+                    onClick={() => setRiskFilter('low')}
+                  >
+                    🟢 Safe / Low
+                  </button>
+                  <button
+                    className={`btn ${riskFilter === 'medium' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+                    style={riskFilter === 'medium' ? { background: 'var(--risk-medium)', borderColor: 'var(--risk-medium)' } : { color: 'var(--risk-medium)' }}
+                    onClick={() => setRiskFilter('medium')}
+                  >
+                    🟡 Medium
+                  </button>
+                  <button
+                    className={`btn ${riskFilter === 'high' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+                    style={riskFilter === 'high' ? { background: 'var(--risk-high)', borderColor: 'var(--risk-high)' } : { color: 'var(--risk-high)' }}
+                    onClick={() => setRiskFilter('high')}
+                  >
+                    🟠 High
+                  </button>
+                  <button
+                    className={`btn ${riskFilter === 'critical' ? 'btn-primary' : 'btn-outline'} btn-sm`}
+                    style={riskFilter === 'critical' ? { background: 'var(--risk-critical)', borderColor: 'var(--risk-critical)' } : { color: 'var(--risk-critical)' }}
+                    onClick={() => setRiskFilter('critical')}
+                  >
+                    🔴 Critical
+                  </button>
+                </div>
               </div>
 
-              {/* Risk Filter Buttons */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-                <button
-                  className={`btn ${riskFilter === 'all' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                  onClick={() => setRiskFilter('all')}
-                >
-                  All ({allDistrictProjects.length})
-                </button>
-                <button
-                  className={`btn ${riskFilter === 'low' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                  style={riskFilter === 'low' ? { background: 'var(--risk-low)', borderColor: 'var(--risk-low)' } : { color: 'var(--risk-low)' }}
-                  onClick={() => setRiskFilter('low')}
-                >
-                  🟢 Safe / Low
-                </button>
-                <button
-                  className={`btn ${riskFilter === 'medium' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                  style={riskFilter === 'medium' ? { background: 'var(--risk-medium)', borderColor: 'var(--risk-medium)' } : { color: 'var(--risk-medium)' }}
-                  onClick={() => setRiskFilter('medium')}
-                >
-                  🟡 Medium
-                </button>
-                <button
-                  className={`btn ${riskFilter === 'high' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                  style={riskFilter === 'high' ? { background: 'var(--risk-high)', borderColor: 'var(--risk-high)' } : { color: 'var(--risk-high)' }}
-                  onClick={() => setRiskFilter('high')}
-                >
-                  🟠 High
-                </button>
-                <button
-                  className={`btn ${riskFilter === 'critical' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                  style={riskFilter === 'critical' ? { background: 'var(--risk-critical)', borderColor: 'var(--risk-critical)' } : { color: 'var(--risk-critical)' }}
-                  onClick={() => setRiskFilter('critical')}
-                >
-                  🔴 Critical
-                </button>
+              {/* Date-Range Filter Control */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '8px 12px', background: 'var(--bg-input)', borderRadius: 6, width: '100%' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>📅 Sanction Date Range:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>From:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ padding: '3px 8px', fontSize: '0.78rem', width: 140 }}
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>To:</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ padding: '3px 8px', fontSize: '0.78rem', width: 140 }}
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                  />
+                </div>
+                {(startDate || endDate) && (
+                  <button
+                    className="btn btn-outline btn-sm"
+                    style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                    onClick={() => { setStartDate(''); setEndDate(''); }}
+                  >
+                    Clear Dates ✕
+                  </button>
+                )}
+                {(startDate || endDate) && (
+                  <span style={{ fontSize: '0.74rem', color: 'var(--accent-hover)' }}>
+                    Filtering {filteredProjects.length} projects within selected date window
+                  </span>
+                )}
               </div>
             </div>
 
             {filteredProjects.length === 0 ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>
-                No projects found in {selectedDistrict} with risk category "{riskFilter}".
+                No projects found in {selectedDistrict} with matching filters {startDate || endDate ? `between ${startDate || 'beginning'} and ${endDate || 'present'}` : ''}.
               </div>
             ) : (
               <div style={{ maxHeight: 400, overflowY: 'auto' }}>
@@ -285,6 +334,7 @@ export default function DistrictDashboard() {
                   <thead>
                     <tr>
                       <th>Project ID</th>
+                      <th>Sanction Date</th>
                       <th>Work Scope</th>
                       <th>Category</th>
                       <th>Sanctioned</th>
@@ -308,7 +358,17 @@ export default function DistrictDashboard() {
                           style={{ cursor: 'pointer' }}
                           title="Click to view full project breakdown"
                         >
-                          <td style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>{p.project_id}</td>
+                          <td style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                            {p.project_id}
+                            {p.geo_duplicate_flag === 1 && (
+                              <span className="risk-badge" style={{ marginLeft: 6, background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '0.68rem', padding: '1px 5px' }}>
+                                🌐 Geo-Dup
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                            {p.approval_date || 'N/A'}
+                          </td>
                           <td style={{ maxWidth: 220, whiteSpace: 'normal', fontSize: '0.82rem' }}>
                             {p.work_description || 'MPLADS project'}
                           </td>

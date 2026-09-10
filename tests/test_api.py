@@ -69,6 +69,13 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/csv", response.headers.get("content-type", ""))
 
+    def test_projects_endpoint_date_filtering(self):
+        response = self.client.get("/api/dashboard/projects?start_date=2020-01-01&end_date=2025-12-31&page_size=10")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("projects", data)
+        self.assertIn("total", data)
+
 if __name__ == '__main__':
     unittest.main()
 
