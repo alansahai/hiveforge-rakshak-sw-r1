@@ -4,7 +4,7 @@ Generates national-level policy insights from the real risk_reports dataset.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from collections import Counter
 from pathlib import Path
 import sys
@@ -46,7 +46,7 @@ class InsightsService:
 
         if df.empty:
             return {
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "total_projects_analyzed": 0,
                 "insights": [{"title": "No data", "finding": "Risk dataset not yet generated.", "impact": "", "recommendation": "Run the scoring pipeline first."}],
             }
@@ -157,7 +157,7 @@ class InsightsService:
             })
 
         return {
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "total_projects_analyzed": total,
             "insights": insights,
         }

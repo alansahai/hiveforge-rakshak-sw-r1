@@ -13,7 +13,7 @@ POST   /api/alerts/send-test-email             — trigger a test notification e
 
 import logging
 from fastapi import APIRouter, HTTPException, Query, Depends
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from src.backend.services.alert_engine import alert_engine
@@ -147,7 +147,7 @@ def send_test_email(
     To send real emails set ENABLE_SMTP=true and configure SMTP env vars.
     """
     demo_alert = {
-        "alert_id": f"ALT-TEST-{int(datetime.utcnow().timestamp())}",
+        "alert_id": f"ALT-TEST-{int(datetime.now(timezone.utc).timestamp())}",
         "project_id": project_id,
         "approval_id": "WS/DEMO/2024/001",
         "risk_score": 75.5,
@@ -156,7 +156,7 @@ def send_test_email(
             "Project shows 35% cost overrun and 4-month schedule delay. "
             "Urgent ground-level review required."
         ),
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
     recipient_email = email_service.get_recipient_email(recipient_role)
     result = email_service.send_alert_email(recipient_email, recipient_role, demo_alert)

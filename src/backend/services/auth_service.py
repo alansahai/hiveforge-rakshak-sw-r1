@@ -6,7 +6,7 @@ Secret key and user store should move to a DB + env var in production.
 
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
@@ -142,7 +142,7 @@ class AuthService:
     @staticmethod
     def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
         payload = data.copy()
-        expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+        expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
         payload["exp"] = expire
         return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 

@@ -5,7 +5,7 @@ Maintains in-memory audit trail per alert.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import sys
@@ -377,7 +377,7 @@ class AlertEngine:
         alert = self._find_or_raise(alert_id)
         alert["status"] = "resolved"
         alert["resolved_by"] = resolved_by
-        alert["resolved_at"] = datetime.utcnow().isoformat()
+        alert["resolved_at"] = datetime.now(timezone.utc).isoformat()
         alert["resolution_notes"] = resolution_notes
         self._append_history(alert, "resolved", resolved_by, resolution_notes)
         return alert
@@ -422,7 +422,7 @@ class AlertEngine:
         alert["status_history"].append({
             "status": status,
             "updated_by": updated_by,
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
             "notes": notes,
         })
 

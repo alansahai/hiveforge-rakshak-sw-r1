@@ -7,8 +7,8 @@ from typing import Optional
 
 
 class LoginRequest(BaseModel):
-    username: str = Field(..., example="mp_demo")
-    password: str = Field(..., example="demo123")
+    username: str = Field(..., json_schema_extra={"example": "mp_demo"})
+    password: str = Field(..., json_schema_extra={"example": "demo123"})
 
 
 class UserResponse(BaseModel):

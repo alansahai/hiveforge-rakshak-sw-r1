@@ -10,7 +10,7 @@ import logging
 import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger("EmailService")
@@ -84,7 +84,7 @@ class EmailService:
         subject = self._build_subject(alert_data)
         plain_body = self._build_plain_body(recipient_role, alert_data)
         html_body = self._build_html_body(recipient_role, alert_data)
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         # ── Demo mode ────────────────────────────────────────────────────────
         if not self.enable_smtp:

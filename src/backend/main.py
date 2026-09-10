@@ -16,6 +16,8 @@ from src.backend.routes import health, analyze, dashboard, auth as auth_routes, 
 from src.backend.services.cache import cache_service
 from src.backend.services.auth_service import auth_service  # noqa: ensure demo users are hashed on startup
 
+from contextlib import asynccontextmanager
+
 # Structured logging
 logging.basicConfig(
     level=logging.INFO,
@@ -23,10 +25,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger("FastAPIMain")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Initializing MPLADS backend services and checking models...")
+    # Verify models on startup
+    iso = (MODELS_DIR / "isolation_forest.pkl").exists()
+    fraud = (MODELS_DIR / "fraud_classifier.pkl").exists()
+    eff = (MODELS_DIR / "efficiency_analyzer.pkl").exists()
+    logger.info(f"Model status on startup: IsolationForest={iso}, FraudClassifier={fraud}, EfficiencyAnalyzer={eff}")
+    logger.info("FastAPI backend initialized successfully.")
+    yield
+    logger.info("FastAPI backend shutting down.")
+
 app = FastAPI(
     title="MPLADS Monitoring & Anomaly Detection System API",
     description="AI-driven anomaly, fraud, and efficiency analytics for MPLADS across India's Lok Sabha and Rajya Sabha public works.",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware for local React and frontend dashboards
@@ -46,17 +61,6 @@ async def log_requests(request: Request, call_next):
     duration = time.time() - start_time
     logger.info(f"{request.method} {request.url.path} - Status: {response.status_code} ({duration * 1000:.1f}ms)")
     return response
-
-# Startup event hook
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Initializing MPLADS backend services and checking models...")
-    # Verify models on startup
-    iso = (MODELS_DIR / "isolation_forest.pkl").exists()
-    fraud = (MODELS_DIR / "fraud_classifier.pkl").exists()
-    eff = (MODELS_DIR / "efficiency_analyzer.pkl").exists()
-    logger.info(f"Model status on startup: IsolationForest={iso}, FraudClassifier={fraud}, EfficiencyAnalyzer={eff}")
-    logger.info("FastAPI backend initialized successfully.")
 
 # Include API Routers
 app.include_router(health.router, tags=["Health"])

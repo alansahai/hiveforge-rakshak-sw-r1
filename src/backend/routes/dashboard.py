@@ -3,7 +3,7 @@ from typing import Optional, List
 import pandas as pd
 import numpy as np
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.config import RISK_REPORTS_PARQUET, RISK_REPORTS_CSV, CLEANED_DATA_PATH, DASHBOARD_CACHE_TTL
 from src.backend.services.cache import cache_service
@@ -97,7 +97,7 @@ def get_dashboard_summary():
         "states_monitored": int(df.get('state', pd.Series()).nunique()),
         "category_breakdown": cat_counts,
         "top_flagged_projects": flagged_list,
-        "updated_at": datetime.now().isoformat()
+        "updated_at": datetime.now(timezone.utc).isoformat()
     }
     
     cache_service.set_cache(cache_key, summary, ttl=DASHBOARD_CACHE_TTL)
