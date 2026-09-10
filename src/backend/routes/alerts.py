@@ -12,14 +12,15 @@ POST   /api/alerts/send-test-email             — trigger a test notification e
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from datetime import datetime
 from typing import Optional
 
 from src.backend.services.alert_engine import alert_engine
 from src.backend.services.email_service import email_service
+from src.backend.routes.auth import get_current_user
 
-router = APIRouter(prefix="/alerts", tags=["alerts"])
+router = APIRouter(prefix="/alerts", tags=["alerts"], dependencies=[Depends(get_current_user)])
 logger = logging.getLogger("AlertsRoutes")
 
 

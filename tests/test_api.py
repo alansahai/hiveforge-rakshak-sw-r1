@@ -76,6 +76,29 @@ class TestAPI(unittest.TestCase):
         self.assertIn("projects", data)
         self.assertIn("total", data)
 
+    def test_auth_enforcement_demo_mode_and_strict_mode(self):
+        import os
+        # 1. In DEMO_MODE=true (default), request succeeds without Bearer token
+        os.environ["DEMO_MODE"] = "true"
+        res_demo = self.client.get("/api/dashboard/summary")
+        self.assertEqual(res_demo.status_code, 200)
+
+        # 2. In DEMO_MODE=false, unauthenticated request returns 401
+        os.environ["DEMO_MODE"] = "false"
+        res_unauth = self.client.get("/api/dashboard/summary")
+        self.assertEqual(res_unauth.status_code, 401)
+
+        # 3. In DEMO_MODE=false, logging in and sending valid Bearer token returns 200
+        login_res = self.client.post("/api/auth/login", json={"username": "ministry_demo", "password": "demo123"})
+        self.assertEqual(login_res.status_code, 200)
+        token = login_res.json()["access_token"]
+
+        res_auth = self.client.get("/api/dashboard/summary", headers={"Authorization": f"Bearer {token}"})
+        self.assertEqual(res_auth.status_code, 200)
+
+        # Reset DEMO_MODE to true
+        os.environ["DEMO_MODE"] = "true"
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -14,25 +14,56 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from src.backend.services.auth_service import auth_service, ACCESS_TOKEN_EXPIRE_MINUTES
 from src.backend.models.auth_schemas import LoginRequest, LoginResponse, UserResponse
 
+import os
+from typing import Optional
+
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer(auto_error=False)
 logger = logging.getLogger("AuthRoutes")
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> dict:
-    """FastAPI dependency — verifies JWT and returns payload. Raises 401 on failure."""
+    """
+    FastAPI dependency — verifies JWT and returns payload. Raises 401 on failure.
+    If DEMO_MODE is true (default for local dev/demo), allows unauthenticated requests
+    by falling back to a default demo user profile. When DEMO_MODE is false, enforces
+    valid Bearer token authentication.
+    """
+    demo_mode_active = os.getenv("DEMO_MODE", "true").lower() in ("true", "1", "yes")
+
     if credentials is None:
+        if demo_mode_active:
+            return {
+                "sub": "ministry_demo",
+                "role": "ministry",
+                "name": "MoSPI Demo User",
+                "state": "National",
+                "district": "All",
+                "demo_mode": True
+            }
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required. Provide a Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+
     payload = auth_service.verify_token(credentials.credentials)
     if payload is None:
+        if demo_mode_active:
+            return {
+                "sub": "ministry_demo",
+                "role": "ministry",
+                "name": "MoSPI Demo User",
+                "state": "National",
+                "district": "All",
+                "demo_mode": True
+            }
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     return payload
 

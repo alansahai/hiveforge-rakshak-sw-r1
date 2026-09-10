@@ -168,6 +168,23 @@ railway init
 railway up
 ```
 
+### Environment & Authentication Configuration
+
+The platform supports both demo evaluation mode and strict enterprise security:
+
+| Variable | Default | Description |
+|---|---|---|
+| `DEMO_MODE` | `true` | When `true`, all `/api/dashboard/*` and `/api/alerts/*` routes bypass mandatory auth for judges and local evaluations. When `false`, all routes enforce a valid Bearer JWT token. |
+| `SECRET_KEY` | `mplads-sih2026-secret...` | Cryptographic secret for signing JWT tokens. |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` | Token lifespan (24 hours). |
+| `ENABLE_SMTP` | `false` | Enable live SMTP email alert dispatching. |
+
+To enforce enterprise authentication in production, set:
+```bash
+DEMO_MODE=false
+```
+When `DEMO_MODE=false`, clients must call `POST /api/auth/login` to retrieve a Bearer token and supply `Authorization: Bearer <token>` on all requests.
+
 ---
 
 ## 📁 Project Structure

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Query, Response, Depends
 from typing import Optional, List
 import pandas as pd
 import numpy as np
@@ -11,8 +11,9 @@ from src.backend.services.alert_engine import get_unresolved_alerts
 from src.backend.services.export import generate_pdf_report, generate_csv_export
 from src.backend.models.schemas import ExportRequest
 from src.backend.services.insights_service import insights_service
+from src.backend.routes.auth import get_current_user
 
-router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+router = APIRouter(prefix="/dashboard", tags=["dashboard"], dependencies=[Depends(get_current_user)])
 logger = logging.getLogger("DashboardRoutes")
 
 def _get_master_data() -> pd.DataFrame:
