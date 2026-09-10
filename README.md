@@ -11,10 +11,12 @@ Built for **Smart India Hackathon (SIH) 2026** — Smart Automation Category.
 | Feature | Description |
 |---|---|
 | **Multi-Model ML Ensemble** | Isolation Forest + PyTorch Autoencoder + XGBoost Fraud Classifier + Gradient Boosting Efficiency Regressor |
-| **50+ Engineered Features** | Financial, timeline, geographic, contractor, and pattern-based feature engineering |
+| **66 Engineered Features** | Financial, timeline, geographic, contractor network, and pattern-based feature engineering |
+| **Geo-Adjacency Duplicate Detection** | Haversine formula flagging duplicate works within 50 km across adjacent district borders |
+| **Contractor Network Graph** | Interactive bipartite SVG visualization mapping contractor-district links and concurrency risks |
 | **4 Role-Based Dashboards** | MP Constituency, State Authority, District Authority, and Ministry (MoSPI) views |
 | **Real-Time Risk Scoring** | Composite risk score (0-100) with anomaly, fraud, and efficiency sub-scores |
-| **SHAP Explainability** | Human-readable explanations for every flagged project |
+| **SHAP Explainability** | Human-readable explanations and actionable recommendations for every flagged project |
 | **Alert & Escalation Engine** | Severity-based alerts with auto-routing to stakeholders |
 | **PDF/CSV Compliance Reports** | Exportable audit reports with filtering |
 | **Interactive Analysis** | Submit any project for on-demand AI risk scoring |
@@ -27,7 +29,7 @@ Built for **Smart India Hackathon (SIH) 2026** — Smart Automation Category.
 ┌─────────────────────────────────────────────────────────┐
 │                     React Frontend                       │
 │  Dashboard (Overview, MP, State, District, Ministry)     │
-│  Analyze Project | Alerts | Export Reports               │
+│  Analyze Project | Alerts | Export Reports | Network Graph│
 ├─────────────────────────────────────────────────────────┤
 │                    FastAPI Backend                        │
 │  /api/analyze  /api/dashboard/*  /health  /api/export    │
@@ -36,7 +38,7 @@ Built for **Smart India Hackathon (SIH) 2026** — Smart Automation Category.
 │  Isolation Forest │ Autoencoder │ XGBoost │ GBRegressor  │
 ├─────────────────────────────────────────────────────────┤
 │           Data Pipeline                                  │
-│  data_loader → feature_engineer → data_validator         │
+│  data_loader → geo_utils → feature_engineer → validator  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -70,7 +72,7 @@ python run_all.py
 
 This will:
 - Download/generate MPLADS data
-- Engineer 50+ features
+- Engineer 66 features (including geospatial & contractor metrics)
 - Train all ML models
 - Start both servers
 
@@ -101,10 +103,10 @@ npm start
 |---|---|---|
 | National Overview | `/` | KPIs, risk distribution, category breakdown, flagged projects |
 | MP Constituency | `/mp` | Fund utilization, project risk table, export reports |
-| State Authority | `/state` | State selector, compliance scorecard, district heatmap |
-| District Authority | `/district` | Budget burndown, contractor performance, Gantt timeline |
-| Ministry (MoSPI) | `/ministry` | National trends, state comparison, quarterly analytics |
-| Analyze Project | `/analyze` | Submit project data for real-time AI risk scoring |
+| State Authority | `/state` | State selector, compliance scorecard, district heatmap, network graph |
+| District Authority | `/district` | Budget burndown, contractor performance, date filtering, Gantt timeline |
+| Ministry (MoSPI) | `/ministry` | National trends, state comparison, quarterly analytics, contractor network graph |
+| Analyze Project | `/analyze` | Submit project data for real-time AI risk scoring with geo-duplicate detection |
 | Alerts & Flags | `/alerts` | Live alerts with severity/state filtering |
 
 ---
@@ -115,19 +117,23 @@ npm start
 |---|---|---|
 | `GET` | `/health` | Health check |
 | `GET` | `/ready` | Readiness check with model status |
-| `POST` | `/api/analyze` | Score a single project (returns risk + explanations) |
+| `POST` | `/api/auth/login` | Authenticate and obtain JWT Bearer token |
+| `POST` | `/api/analyze` | Score a single project (returns risk + explanations + geo-duplicates) |
 | `GET` | `/api/dashboard/summary` | National summary metrics |
 | `GET` | `/api/dashboard/mp/{state}/{mp_name}` | MP portfolio dashboard |
 | `GET` | `/api/dashboard/state/{state}` | State-level dashboard |
-| `GET` | `/api/dashboard/district/{state}/{district}` | District-level dashboard |
+| `GET` | `/api/dashboard/district/{state}/{district}` | District-level dashboard (supports `start_date`, `end_date`) |
 | `GET` | `/api/dashboard/ministry` | Ministry national dashboard |
+| `GET` | `/api/dashboard/contractor-network` | Bipartite contractor-district relationship network graph |
 | `GET` | `/api/dashboard/alerts` | Filtered alert list |
-| `GET` | `/api/dashboard/projects` | Paginated project list |
+| `GET` | `/api/dashboard/projects` | Paginated project list (supports `start_date`, `end_date`, `search`) |
 | `POST` | `/api/dashboard/export` | Download PDF/CSV report |
 
 ---
 
 ## 🤖 ML Models
+
+See the comprehensive [MODEL_CARD.md](MODEL_CARD.md) for full architectural specifications, mathematical formulations, training hyperparameters, leakage audit findings, and ethical boundaries.
 
 | Model | Type | Purpose | Output |
 |---|---|---|---|
