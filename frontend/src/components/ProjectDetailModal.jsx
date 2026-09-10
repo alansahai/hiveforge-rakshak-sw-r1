@@ -204,6 +204,36 @@ export default function ProjectDetailModal({ project, projectId, onClose }) {
                 <h4 style={{ margin: 0, fontSize: '0.85rem' }}>🤖 AI Diagnostic Signals & Risk Factors</h4>
               </div>
 
+              {/* Duplicate Work Banner if flagged */}
+              {((data.geo_duplicate_flag && Number(data.geo_duplicate_flag) === 1) || data.geo_duplicate_detected || (data.explanations && data.explanations.toLowerCase().includes('duplicate'))) && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid #ef4444',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  marginBottom: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}>
+                  <span style={{ fontSize: '1.3rem' }}>🌐</span>
+                  <div>
+                    <div style={{ color: '#f87171', fontWeight: 700, fontSize: '0.85rem' }}>
+                      {data.geo_duplicate_flag || (data.explanations && data.explanations.toLowerCase().includes('cross-boundary'))
+                        ? 'Cross-District Duplicate Work Flagged'
+                        : 'Duplicate Work Detected in District Records'}
+                    </div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 2 }}>
+                      {data.geo_duplicate_details?.explanation || (
+                        data.geo_duplicate_flag || (data.explanations && data.explanations.toLowerCase().includes('cross-boundary'))
+                          ? 'Physical proximity analysis indicates a near-identical work sanctioned across administrative borders within ~15-40 km.'
+                          : 'Matching category and financial sanction recorded in district project registry.'
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
                 <div style={{ background: 'var(--bg-input)', padding: 10, borderRadius: 6 }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Anomaly Score</div>

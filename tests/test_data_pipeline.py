@@ -39,6 +39,26 @@ class TestDataPipeline(unittest.TestCase):
         # Verify 50+ features generated
         self.assertGreaterEqual(feats.shape[1], 50)
 
+    def test_geo_duplicate_detection(self):
+        from src.pipeline.geo_utils import haversine_distance_km, check_single_project_geo_duplicate
+        # Haversine distance check between Bengaluru and Mysuru
+        d = haversine_distance_km(12.9716, 77.5946, 12.2958, 76.6394)
+        self.assertGreater(d, 100)
+        self.assertLess(d, 160)
+
+        # Single project check with border trigger
+        p1 = {
+            "project_id": "TEST-BORDER-01",
+            "district": "Bengaluru Urban",
+            "state": "Karnataka",
+            "category": "Road Infrastructure",
+            "amount_sanctioned": 1000000.0,
+            "work_description": "Construction of inter-district border link road"
+        }
+        res = check_single_project_geo_duplicate(p1)
+        self.assertTrue(res["geo_duplicate_detected"])
+        self.assertEqual(res["geo_duplicate_type"], "cross_district")
+
 if __name__ == '__main__':
     unittest.main()
 

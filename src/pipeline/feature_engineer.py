@@ -12,6 +12,7 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 # Adjust python path
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from src.config import CLEANED_DATA_PATH, FEATURE_DATA_PATH, FEATURE_METADATA_PATH, MODELS_DIR
+from src.pipeline.geo_utils import compute_geo_duplicate_flags
 
 logger = logging.getLogger("FeatureEngineer")
 
@@ -242,12 +243,15 @@ def engineer_pattern_anomaly_features(df: pd.DataFrame) -> pd.DataFrame:
     # 2. approval_to_spend_ratio
     feats['approval_to_spend_ratio'] = _safe_div(spent, sanctioned).clip(0.0, 3.0)
     
+    # 2b. geo_duplicate_flag (Cross-district haversine proximity duplicate check)
+    feats['geo_duplicate_flag'] = compute_geo_duplicate_flags(df)
+    
     # 3. duplicate_work_score
     if len(df) > 1 and 'location' in df.columns:
         exact_match = df.duplicated(subset=['location', 'category', 'amount_sanctioned'], keep=False).astype(float)
-        feats['duplicate_work_score'] = exact_match * 0.8 + 0.1
+        feats['duplicate_work_score'] = np.maximum(exact_match * 0.8 + 0.1, feats['geo_duplicate_flag'] * 0.85 + 0.1)
     else:
-        feats['duplicate_work_score'] = pd.Series(0.10, index=df.index)
+        feats['duplicate_work_score'] = np.where(feats['geo_duplicate_flag'] == 1, 0.85, 0.10)
         
     # 4. ghost_project_indicator
     app_date = pd.to_datetime(df['approval_date'])
@@ -367,7 +371,7 @@ def engineer_features(df: pd.DataFrame, is_training: bool = False) -> pd.DataFra
         'project_id', 'approval_id', 'audit_trigger_score', 
         'cost_inflation_flag', 'milestone_delay_flag', 'ghost_project_indicator',
         'suspicious_timing', 'cost_round_number_flag', 'location_duplicate_flag',
-        'work_category_mismatch'
+        'geo_duplicate_flag', 'work_category_mismatch'
     ]]
     
     scaler_path = MODELS_DIR / "scaler.pkl"

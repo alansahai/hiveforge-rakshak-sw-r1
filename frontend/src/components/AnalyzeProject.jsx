@@ -211,6 +211,58 @@ export default function AnalyzeProject() {
                 </div>
               </div>
 
+              {/* Geo-Adjacency Duplicate Work Alert Banner */}
+              {result.geo_duplicate_detected && (
+                <div style={{
+                  background: result.geo_duplicate_type === 'cross_district' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                  border: `1px solid ${result.geo_duplicate_type === 'cross_district' ? '#ef4444' : '#f59e0b'}`,
+                  borderRadius: 10,
+                  padding: '14px 18px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12
+                }}>
+                  <div style={{ fontSize: '1.6rem', lineHeight: 1 }}>
+                    {result.geo_duplicate_type === 'cross_district' ? '🌐' : '📋'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <strong style={{
+                        color: result.geo_duplicate_type === 'cross_district' ? 'var(--risk-critical)' : 'var(--risk-medium)',
+                        fontSize: '0.95rem'
+                      }}>
+                        {result.geo_duplicate_type === 'cross_district'
+                          ? '🚨 Geo-Adjacency Cross-Boundary Duplicate Detected!'
+                          : '⚠️ Same-District Duplicate Work Detected!'}
+                      </strong>
+                      <span className="risk-badge" style={{
+                        background: result.geo_duplicate_type === 'cross_district' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(245, 158, 11, 0.25)',
+                        color: result.geo_duplicate_type === 'cross_district' ? '#fca5a5' : '#fde68a',
+                        fontSize: '0.72rem',
+                        padding: '2px 8px'
+                      }}>
+                        {result.geo_duplicate_type === 'cross_district'
+                          ? `Adjacent District (~${result.distance_to_duplicate_km ?? 15} km)`
+                          : 'Exact Same District'}
+                      </span>
+                    </div>
+                    <p style={{ margin: '6px 0 0 0', fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                      {result.geo_duplicate_details?.explanation || (
+                        result.geo_duplicate_type === 'cross_district'
+                          ? `Duplicate work detected across administrative boundary in neighboring district (${result.distance_to_duplicate_km ?? 15} km away). Likely dual-funded or duplicate geo-spatial allocation.`
+                          : 'A work with matching category and budget exists in the district master dataset.'
+                      )}
+                    </p>
+                    {result.geo_duplicate_details?.matched_location && (
+                      <div style={{ marginTop: 6, fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                        📍 <strong>Matched Reference:</strong> {result.geo_duplicate_details.matched_location} (ID: <code>{result.geo_duplicate_details.matched_project_id}</code>)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* MATHEMATICAL SCORE BRIEFING & DECOMPOSITION CARD */}
               <div className="panel" style={{ border: '1px solid rgba(59, 130, 246, 0.3)', background: 'linear-gradient(180deg, rgba(26, 34, 53, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)' }}>
                 <div className="panel-header" style={{ marginBottom: 12 }}>

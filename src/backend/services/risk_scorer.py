@@ -1,7 +1,8 @@
 import sys
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List
 import pandas as pd
 import numpy as np
 
@@ -12,10 +13,12 @@ from src.config import (
     ANALYZE_CACHE_TTL,
     RISK_LOW_MAX,
     RISK_MEDIUM_MAX,
-    RISK_HIGH_MAX
+    RISK_HIGH_MAX,
+    RISK_REPORTS_PARQUET
 )
 from src.models.ensemble import MPLADSEnsembleScorer
 from src.pipeline.feature_engineer import engineer_features
+from src.pipeline.geo_utils import check_single_project_geo_duplicate
 from src.explainability.rule_extractor import extract_human_rules
 from src.backend.services.cache import cache_service
 
@@ -44,6 +47,17 @@ class RiskScorerService:
     def __init__(self, models_dir: Path = MODELS_DIR):
         self.models_dir = models_dir
         self.ensemble = MPLADSEnsembleScorer(models_dir)
+        self._master_df = None
+
+    def get_master_df(self) -> Optional[pd.DataFrame]:
+        """Lazily load risk reports dataset for geo and historical duplicate checks."""
+        if self._master_df is None and RISK_REPORTS_PARQUET.exists():
+            try:
+                self._master_df = pd.read_parquet(RISK_REPORTS_PARQUET)
+                logger.info(f"Loaded master reference dataset with {len(self._master_df):,} records for geo-checks")
+            except Exception as e:
+                logger.warning(f"Failed to load master reference dataset: {e}")
+        return self._master_df
 
     def analyze_single_project(self, project_dict: dict) -> dict:
         """
@@ -86,12 +100,20 @@ class RiskScorerService:
         composite_score = compute_risk_score(anomaly_score, fraud_prob, eff_score)
         risk_cat = get_risk_category(composite_score)
         
+        # Geo-Adjacency and duplicate work check
+        geo_dup_info = check_single_project_geo_duplicate(project_dict, master_df=self.get_master_df())
+        is_geo_dup = geo_dup_info.get("geo_duplicate_detected", False)
+        dup_type = geo_dup_info.get("geo_duplicate_type", "none")
+        dist_km = geo_dup_info.get("distance_to_duplicate_km")
+
         # Extract fraud indicators & explanations
         fraud_indicators = []
         cost_sanctioned = float(project_dict.get('amount_sanctioned', 500000.0))
         cost_spent = float(project_dict.get('amount_spent', 0.0))
         cost_overrun_pct = ((cost_spent - cost_sanctioned) / (cost_sanctioned + 1e-4)) * 100.0
         
+        if is_geo_dup:
+            fraud_indicators.append(f"duplicate_work_{dup_type}")
         if cost_overrun_pct > 15.0:
             fraud_indicators.append("cost_inflation")
         if int(cost_sanctioned) % 100000 == 0:
@@ -104,6 +126,8 @@ class RiskScorerService:
             fraud_indicators.append("standard_financial_pattern")
             
         fraud_explanation_parts = []
+        if is_geo_dup:
+            fraud_explanation_parts.append(geo_dup_info.get("explanation", "Duplicate work detected"))
         if cost_overrun_pct > 0:
             fraud_explanation_parts.append(f"Project reflects {cost_overrun_pct:.1f}% spend variation relative to sanctioned amount")
         if "contractor_concurrency" in fraud_indicators:
@@ -120,6 +144,12 @@ class RiskScorerService:
             
         # Actionable recommendations
         recommendations = []
+        if is_geo_dup:
+            if dup_type == "cross_district":
+                recommendations.append(f"Cross-Boundary Duplicate Alert: Conduct joint physical inspection with adjacent district ({dist_km:.1f} km away)")
+            else:
+                recommendations.append("Same-District Duplicate Alert: Verify work against district master registry to prevent dual-billing")
+
         if composite_score >= RISK_HIGH_MAX:
             recommendations.append("Immediate physical audit and measurement book verification recommended")
             recommendations.append("Freeze subsequent tranche releases pending independent inspection")
@@ -133,7 +163,7 @@ class RiskScorerService:
             recommendations.append("Track next tranche disbursement against physical milestones")
             
         # Alert escalation
-        if composite_score >= RISK_HIGH_MAX:
+        if is_geo_dup or composite_score >= RISK_HIGH_MAX:
             alert_escalation = "Send immediate escalation alert to MP, District Authority, and MoSPI"
         elif composite_score >= RISK_MEDIUM_MAX:
             alert_escalation = "Flag in monthly district audit report"
@@ -146,6 +176,19 @@ class RiskScorerService:
         efficiency_pts = round(0.25 * (1.0 - eff_score) * 100.0, 1)
 
         drivers = []
+        if is_geo_dup:
+            if dup_type == "cross_district":
+                drivers.append({
+                    "factor": "Cross-District Duplicate",
+                    "impact": f"Adjacent district match within ~{dist_km:.1f} km",
+                    "severity": "critical"
+                })
+            else:
+                drivers.append({
+                    "factor": "Same-District Duplicate",
+                    "impact": "Identical project found in district records",
+                    "severity": "critical"
+                })
         if cost_overrun_pct > 10.0:
             drivers.append({"factor": "Cost Overrun", "impact": f"+{cost_overrun_pct:.1f}% spend variation", "severity": "high"})
         if delay_days > 30:
@@ -221,10 +264,15 @@ class RiskScorerService:
             "score_breakdown": score_breakdown,
             "recommendations": recommendations,
             "alert_escalation": alert_escalation,
-            "computed_at": datetime.now().isoformat(),
-            "model_confidence": 0.88
+            "computed_at": datetime.now(timezone.utc).isoformat(),
+            "model_confidence": 0.88,
+            "geo_duplicate_detected": bool(is_geo_dup),
+            "geo_duplicate_type": dup_type,
+            "distance_to_duplicate_km": dist_km,
+            "geo_duplicate_details": geo_dup_info
         }
         
         # Cache for 24 hours
         cache_service.set_cache(cache_key, response, ttl=ANALYZE_CACHE_TTL)
         return response
+

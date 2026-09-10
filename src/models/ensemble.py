@@ -94,8 +94,15 @@ class MPLADSEnsembleScorer:
         concurrency = df_features.get('contractor_concurrency', pd.Series(1, index=df_features.index)).values
         delay_days = df_features.get('days_behind_schedule', pd.Series(0, index=df_features.index)).values
         
+        geo_dup = df_features.get('geo_duplicate_flag', pd.Series(0, index=df_features.index)).values
+        dup_score = df_features.get('duplicate_work_score', pd.Series(0, index=df_features.index)).values
+        
         for i in range(len(df_features)):
             reasons = []
+            if geo_dup[i] == 1:
+                reasons.append("Cross-boundary duplicate work detected across adjacent administrative district")
+            elif dup_score[i] > 0.70:
+                reasons.append("Same-district duplicate work detected at matching location")
             if fraud_prob[i] > 0.50:
                 if cost_inflation[i] == 1:
                     reasons.append("Cost inflation exceeding initial sanction (>15%)")
