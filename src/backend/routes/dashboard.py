@@ -5,11 +5,12 @@ import numpy as np
 import logging
 from datetime import datetime
 
-from src.config import RISK_REPORTS_CSV, CLEANED_DATA_PATH, DASHBOARD_CACHE_TTL
+from src.config import RISK_REPORTS_PARQUET, RISK_REPORTS_CSV, CLEANED_DATA_PATH, DASHBOARD_CACHE_TTL
 from src.backend.services.cache import cache_service
 from src.backend.services.alert_engine import get_unresolved_alerts
 from src.backend.services.export import generate_pdf_report, generate_csv_export
 from src.backend.models.schemas import ExportRequest
+from src.backend.services.insights_service import insights_service
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 logger = logging.getLogger("DashboardRoutes")
@@ -20,7 +21,9 @@ def _get_master_data() -> pd.DataFrame:
     if cached_df is not None:
         return pd.DataFrame(cached_df)
         
-    if RISK_REPORTS_CSV.exists():
+    if RISK_REPORTS_PARQUET.exists():
+        df = pd.read_parquet(RISK_REPORTS_PARQUET)
+    elif RISK_REPORTS_CSV.exists():
         df = pd.read_csv(RISK_REPORTS_CSV, low_memory=False)
     elif CLEANED_DATA_PATH.exists():
         df = pd.read_csv(CLEANED_DATA_PATH, low_memory=False)
@@ -50,6 +53,7 @@ def get_dashboard_summary():
     if df.empty:
         return {
             "total_projects": 0, "total_sanctioned": 0, "total_spent": 0,
+            "low_risk_projects": 0, "medium_risk_projects": 0,
             "high_risk_projects": 0, "critical_projects": 0, "completion_rate": 0.0
         }
         
@@ -59,6 +63,8 @@ def get_dashboard_summary():
     risk_scores = _get_series(df, 'risk_score', 0.0)
     critical_count = int((risk_scores >= 80).sum())
     high_count = int(((risk_scores >= 60) & (risk_scores < 80)).sum())
+    medium_count = int(((risk_scores >= 40) & (risk_scores < 60)).sum())
+    low_count = int((risk_scores < 40).sum())
     
     prog = _get_series(df, 'progress_percentage', 0.0)
     completed_count = int((prog >= 95).sum())
@@ -83,6 +89,8 @@ def get_dashboard_summary():
         "total_spent": spent,
         "critical_projects": critical_count,
         "high_risk_projects": high_count,
+        "medium_risk_projects": medium_count,
+        "low_risk_projects": low_count,
         "completed_projects": completed_count,
         "completion_rate": completion_rate,
         "states_monitored": int(df.get('state', pd.Series()).nunique()),
@@ -453,3 +461,122 @@ def get_projects(
         "total_pages": (total + page_size - 1) // page_size,
         "projects": projects
     }
+
+
+@router.get("/ministry-insights", summary="National-level policy insights for Ministry / MoSPI")
+def get_ministry_insights():
+    """
+    8. GET /api/dashboard/ministry-insights
+    Generates four policy insights from real 98K project data:
+      1. National risk distribution overview
+      2. Contractor concentration risk
+      3. State performance gap
+      4. Cost inflation and overrun trend
+    """
+    cache_key = "dashboard:ministry_insights"
+    cached = cache_service.get_cached_result(cache_key)
+    if cached:
+        return cached
+
+    data = insights_service.get_national_insights()
+    cache_service.set_cache(cache_key, data, ttl=DASHBOARD_CACHE_TTL)
+    return data
+
+
+@router.get("/states-districts", summary="Mapping of states to their districts")
+def get_states_and_districts():
+    """Returns mapping of each state to its sorted list of districts from the master dataset."""
+    cache_key = "dashboard:states_districts"
+    cached = cache_service.get_cached_result(cache_key)
+    if cached:
+        return cached
+
+    df = _get_master_data()
+    if df.empty or 'state' not in df.columns or 'district' not in df.columns:
+        return {}
+
+    mapping = {}
+    for state, group in df.groupby('state'):
+        clean_state = str(state).strip()
+        districts = sorted([str(d).strip() for d in group['district'].dropna().unique() if str(d).strip()])
+        if clean_state and districts:
+            mapping[clean_state] = districts
+
+    cache_service.set_cache(cache_key, mapping, ttl=DASHBOARD_CACHE_TTL)
+    return mapping
+
+
+@router.get("/mps", summary="List unique MPs with constituency and project statistics")
+def get_mps_list(state: Optional[str] = Query(None)):
+    """Returns unique MPs with their states, constituencies, project counts, and avg risk."""
+    cache_key = f"dashboard:mps:{state or 'all'}"
+    cached = cache_service.get_cached_result(cache_key)
+    if cached:
+        return cached
+
+    df = _get_master_data()
+    if df.empty or 'mp_name' not in df.columns:
+        return {"mps": []}
+
+    if state and isinstance(state, str):
+        df = df[df['state'].astype(str).str.lower() == state.lower()]
+
+    mp_list = []
+    for mp_name, group in df.groupby('mp_name'):
+        clean_name = str(mp_name).strip()
+        if not clean_name or clean_name.lower() in ('nan', 'none', 'unknown', ''):
+            continue
+        mp_state = str(group['state'].iloc[0]) if 'state' in group.columns else ''
+        mp_const = str(group['constituency'].iloc[0]) if 'constituency' in group.columns else ''
+        p_count = len(group)
+        avg_risk = float(round(pd.to_numeric(group.get('risk_score', 0), errors='coerce').mean(), 1))
+        mp_list.append({
+            "mp_name": clean_name,
+            "state": mp_state,
+            "constituency": mp_const,
+            "project_count": p_count,
+            "avg_risk_score": avg_risk
+        })
+
+    mp_list = sorted(mp_list, key=lambda x: x['project_count'], reverse=True)
+    res = {"mps": mp_list}
+    cache_service.set_cache(cache_key, res, ttl=DASHBOARD_CACHE_TTL)
+    return res
+
+
+@router.get("/project/{project_id:path}", summary="Get comprehensive details for a single project")
+def get_single_project(project_id: str):
+    """Fetches comprehensive details of a single project by project_id."""
+    df = _get_master_data()
+    if df.empty:
+        raise HTTPException(status_code=404, detail="Dataset unavailable.")
+
+    pid_clean = project_id.strip()
+    match = df[df['project_id'].astype(str).str.lower() == pid_clean.lower()]
+    if match.empty:
+        # Fallback partial match
+        match = df[df['project_id'].astype(str).str.contains(pid_clean, case=False, na=False)]
+
+    if match.empty:
+        raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found.")
+
+    row = match.iloc[0].to_dict()
+    cleaned = {}
+    for k, v in row.items():
+        if pd.isna(v):
+            cleaned[k] = None
+        elif isinstance(v, (np.floating, float)):
+            cleaned[k] = round(float(v), 2)
+        elif isinstance(v, (np.integer, int)):
+            cleaned[k] = int(v)
+        else:
+            cleaned[k] = str(v)
+
+    return cleaned
+
+
+@router.get("/project-detail", summary="Get comprehensive details for a single project via query parameter")
+def get_single_project_query(project_id: str = Query(...)):
+    """Fetches comprehensive details of a single project by project_id query parameter."""
+    return get_single_project(project_id)
+

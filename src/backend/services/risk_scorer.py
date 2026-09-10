@@ -140,6 +140,69 @@ class RiskScorerService:
         else:
             alert_escalation = "No escalation required"
             
+        # Detailed mathematical score breakdown
+        anomaly_pts = round(0.40 * anomaly_score * 100.0, 1)
+        fraud_pts = round(0.35 * fraud_prob * 100.0, 1)
+        efficiency_pts = round(0.25 * (1.0 - eff_score) * 100.0, 1)
+
+        drivers = []
+        if cost_overrun_pct > 10.0:
+            drivers.append({"factor": "Cost Overrun", "impact": f"+{cost_overrun_pct:.1f}% spend variation", "severity": "high"})
+        if delay_days > 30:
+            drivers.append({"factor": "Schedule Delay", "impact": f"{delay_days} days behind milestone", "severity": "high" if delay_days > 90 else "medium"})
+        if "round_number_amount" in fraud_indicators:
+            drivers.append({"factor": "Round Sanctioned Amount", "impact": "Sanctioned amount rounded to exactly lakh/crore boundary", "severity": "low"})
+        if "contractor_concurrency" in fraud_indicators:
+            drivers.append({"factor": "Contractor Concurrency", "impact": f"Contractor handling {project_dict.get('previous_contractor_projects', 1)} projects", "severity": "medium"})
+        if int(project_dict.get('previous_contractor_overruns', 0)) > 0:
+            drivers.append({"factor": "Contractor History", "impact": f"{project_dict.get('previous_contractor_overruns')} past overruns recorded", "severity": "high"})
+        if not drivers:
+            drivers.append({"factor": "Financial & Milestone Adherence", "impact": "Expenditure and progress within anticipated variance bounds", "severity": "safe"})
+
+        score_breakdown = {
+            "formula": "Risk Score = (0.40 × Anomaly) + (0.35 × Fraud) + (0.25 × (1 - Efficiency))",
+            "weights": {
+                "anomaly": 0.40,
+                "fraud": 0.35,
+                "efficiency": 0.25
+            },
+            "components": [
+                {
+                    "name": "Statistical Anomaly",
+                    "weight_pct": 40,
+                    "raw_value": round(anomaly_score, 3),
+                    "points": anomaly_pts,
+                    "color": "#3b82f6",
+                    "description": "Isolation Forest deviation from standard expenditure-to-progress distribution."
+                },
+                {
+                    "name": "Financial & Fraud Indicators",
+                    "weight_pct": 35,
+                    "raw_value": round(fraud_prob, 3),
+                    "points": fraud_pts,
+                    "color": "#ef4444",
+                    "description": "XGBoost red flags (contractor history, cost overrun %, round disbursements)."
+                },
+                {
+                    "name": "Schedule Inefficiency Penalty",
+                    "weight_pct": 25,
+                    "raw_value": round(1.0 - eff_score, 3),
+                    "points": efficiency_pts,
+                    "color": "#f59e0b",
+                    "description": f"Timeline lag ({delay_days} days delayed) relative to planned completion milestone."
+                }
+            ],
+            "total_points": composite_score,
+            "key_drivers": drivers,
+            "plain_english_summary": (
+                f"This project scored {composite_score}/100 ({risk_cat.upper()} RISK). "
+                f"The statistical anomaly model contributed {anomaly_pts} pts (40% weight), "
+                f"the fraud probability model contributed {fraud_pts} pts (35% weight), "
+                f"and execution delay contributed {efficiency_pts} pts (25% weight). "
+                + (f"Main risk factors: {'; '.join(d['factor'] + ' (' + d['impact'] + ')' for d in drivers)}." if drivers else "")
+            )
+        }
+
         response = {
             "project_id": proj_id,
             "risk_score": composite_score,
@@ -155,6 +218,7 @@ class RiskScorerService:
                 "days_behind_schedule": delay_days,
                 "explanation": eff_explanation
             },
+            "score_breakdown": score_breakdown,
             "recommendations": recommendations,
             "alert_escalation": alert_escalation,
             "computed_at": datetime.now().isoformat(),

@@ -21,8 +21,9 @@ data/processed/
 data/features/
 data/results/*.csv
 data/results/*.parquet
-# Keep result images for documentation
+# Keep result images and compressed parquet dataset for production deployment
 !data/results/*.png
+!data/results/risk_reports.parquet
 
 # ===== Logs =====
 logs/
@@ -63,4 +64,3 @@ desktop.ini
 # ===== Misc =====
 .agents/
 MPLADS_MASTER_PROMPT.md
-PROGRESS_UPDATE.md

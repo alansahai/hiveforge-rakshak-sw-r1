@@ -12,8 +12,9 @@ from fastapi.staticfiles import StaticFiles
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 
 from src.config import MODELS_DIR
-from src.backend.routes import health, analyze, dashboard
+from src.backend.routes import health, analyze, dashboard, auth as auth_routes, alerts as alerts_routes
 from src.backend.services.cache import cache_service
+from src.backend.services.auth_service import auth_service  # noqa: ensure demo users are hashed on startup
 
 # Structured logging
 logging.basicConfig(
@@ -61,6 +62,8 @@ async def startup_event():
 app.include_router(health.router, tags=["Health"])
 app.include_router(analyze.router, prefix="/api", tags=["Analysis"])
 app.include_router(dashboard.router, prefix="/api", tags=["Dashboard"])
+app.include_router(auth_routes.router, prefix="/api", tags=["Authentication"])
+app.include_router(alerts_routes.router, prefix="/api", tags=["Alerts"])
 
 # ---------- Serve React Frontend Build in Production ----------
 

@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
-import { fetchMinistryDashboard, formatCrore } from '../api/client';
+import { fetchMinistryDashboard, fetchMinistryInsights, formatCrore } from '../api/client';
 
 const RISK_PIE_COLORS = ['#22c55e', '#f59e0b', '#f97316', '#ef4444'];
 
 export default function MinistryDashboard() {
   const [data, setData] = useState(null);
+  const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMinistryDashboard().then(d => {
+    Promise.all([
+      fetchMinistryDashboard(),
+      fetchMinistryInsights(),
+    ]).then(([d, ins]) => {
       setData(d);
+      setInsights(ins);
       setLoading(false);
     });
   }, []);
@@ -158,6 +163,32 @@ export default function MinistryDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Policy Insights */}
+      {insights && insights.insights && (
+        <div className="panel" style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <h3>💡 National Policy Insights</h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+              Analysed {insights.total_projects_analyzed?.toLocaleString()} projects · {new Date(insights.generated_at).toLocaleTimeString()}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+            {insights.insights.map((ins, i) => (
+              <div key={i} className="insight-card">
+                <div className="insight-title">{ins.title}</div>
+                <div className="insight-finding">{ins.finding}</div>
+                {ins.impact && (
+                  <div className="insight-impact">⚡ {ins.impact}</div>
+                )}
+                {ins.recommendation && (
+                  <div className="insight-recommendation">✅ {ins.recommendation}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

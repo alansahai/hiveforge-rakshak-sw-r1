@@ -39,6 +39,7 @@ class RiskScoreResponse(BaseModel):
     alert_escalation: str
     computed_at: str
     model_confidence: float
+    score_breakdown: Optional[Dict[str, Any]] = None
 
 class AlertResponse(BaseModel):
     alert_id: str
