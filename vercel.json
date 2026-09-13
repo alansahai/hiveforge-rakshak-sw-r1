@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "frontend/build",
   "framework": "create-react-app",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/build",
   "rewrites": [
     {
       "source": "/(.*)",
