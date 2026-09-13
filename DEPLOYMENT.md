@@ -56,12 +56,20 @@ git push origin main
    | `DEMO_MODE` | `true` | `true` allows evaluators/judges instant access without mandatory login; `false` strictly requires Bearer token |
    | `ALLOWED_ORIGINS` | `*` or `https://your-app.vercel.app` | Allowed CORS origins (note: `*.vercel.app` is auto-whitelisted) |
 
-6. **Generate Public Domain**:
+6. **Enable Auto-Deploy on Each Push**:
+   * Under the **"Settings"** tab → Scroll to **"Source Repo"**.
+   * Ensure **Branch** is set to `main`.
+   * Ensure **Automatic Deployments** is toggled to **ON** (enabled).
+   * Note: Our [`railway.json`](./railway.json) includes `"watchPatterns": ["**"]` which instructs Railway to trigger a deployment whenever any change is pushed to `main`.
+   * *Troubleshooting note*: If Railway ever pauses auto-deployments due to an earlier crash or failed build, clicking **Deploy** once on the latest commit in the **Deployments** tab immediately re-arms the automatic deployment pipeline.
+
+7. **Generate Public Domain**:
    * Under the **"Settings"** tab → Scroll to **"Networking"** / **"Public Networking"**.
    * Click **"Generate Domain"** (e.g., `https://hiveforge-rakshak-backend.up.railway.app`).
    * Copy this URL—you will use it in Step 3 for the frontend.
 
-7. **Verify Backend Health**:
+8. **Verify Backend Health**:
+
    Open in browser:
    ```
    https://<your-railway-domain>/health
