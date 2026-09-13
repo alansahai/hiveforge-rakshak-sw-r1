@@ -1401,6 +1401,22 @@ select option {
 }
 
 .leaflet-container {
+  background-color: #111827 !important;
   font-family: inherit !important;
+  outline: none;
 }
+
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-tile {
+  visibility: inherit !important;
+}
+
 

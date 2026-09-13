@@ -170,20 +170,36 @@ const FALLBACK_DISTRICT_COORDS = {
 const TILE_PROVIDERS = {
   streets: {
     name: '🗺️ Streets',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    maxZoom: 19
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    maxZoom: 20
   },
   dark: {
     name: '🌃 Cyber Dark',
     url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    maxZoom: 19
+    subdomains: 'abcd',
+    maxZoom: 20
   },
   satellite: {
     name: '🛰️ Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    maxZoom: 18
+    subdomains: '',
+    maxZoom: 19
   }
 };
+
+function createTileLayer(providerKey) {
+  const provider = TILE_PROVIDERS[providerKey] || TILE_PROVIDERS.streets;
+  return L.tileLayer(provider.url, {
+    maxZoom: provider.maxZoom || 19,
+    subdomains: provider.subdomains !== undefined ? provider.subdomains : 'abcd',
+    crossOrigin: true,
+    keepBuffer: 6,
+    updateWhenIdle: false,
+    updateWhenZooming: true
+  });
+}
+
 
 export default function RealTimeDistrictMap({
   districtName = '',
@@ -292,13 +308,9 @@ export default function RealTimeDistrictMap({
 
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Initial tile layer
-    const provider = TILE_PROVIDERS[activeLayer] || TILE_PROVIDERS.dark;
-    const tileLayer = L.tileLayer(provider.url, {
-      maxZoom: provider.maxZoom,
-      subdomains: 'abcd'
-    }).addTo(map);
-
+    // Initial tile layer with buffer to prevent grey patches
+    const tileLayer = createTileLayer(activeLayer);
+    tileLayer.addTo(map);
     tileLayerRef.current = tileLayer;
 
     // Layer group for dynamic markers
@@ -307,16 +319,36 @@ export default function RealTimeDistrictMap({
 
     mapInstanceRef.current = map;
 
-    // Force map to recalculate size after DOM mount
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 250);
+    // Force map to recalculate size across progressive render cycles
+    const invalidate = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+    const t1 = setTimeout(invalidate, 100);
+    const t2 = setTimeout(invalidate, 300);
+    const t3 = setTimeout(invalidate, 600);
+    const t4 = setTimeout(invalidate, 1200);
+
+    let resizeObserver = null;
+    if (typeof window !== 'undefined' && window.ResizeObserver && mapContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        invalidate();
+      });
+      resizeObserver.observe(mapContainerRef.current);
+    }
 
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      if (resizeObserver) resizeObserver.disconnect();
       map.remove();
       mapInstanceRef.current = null;
     };
   }, []);
+
 
   // 2. Center map when district center coordinates change
   useEffect(() => {
@@ -351,14 +383,12 @@ export default function RealTimeDistrictMap({
       tileLayerRef.current.remove();
     }
 
-    const provider = TILE_PROVIDERS[activeLayer] || TILE_PROVIDERS.dark;
-    const newTileLayer = L.tileLayer(provider.url, {
-      maxZoom: provider.maxZoom,
-      subdomains: 'abcd'
-    }).addTo(map);
-
+    const newTileLayer = createTileLayer(activeLayer);
+    newTileLayer.addTo(map);
     tileLayerRef.current = newTileLayer;
+    map.invalidateSize();
   }, [activeLayer]);
+
 
   // 4. Render Project Pins onto Map
   useEffect(() => {
