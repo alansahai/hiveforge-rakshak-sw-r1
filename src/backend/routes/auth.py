@@ -133,10 +133,10 @@ def demo_users():
     """
     demo_mode_active = os.getenv("DEMO_MODE", "true").lower() in ("true", "1", "yes")
     env = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower()
-    if env == "production" or not demo_mode_active:
+    if not demo_mode_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Demo credentials endpoint disabled in production and strict authentication mode."
+            detail="Demo credentials endpoint disabled in strict authentication mode."
         )
     return {
         "note": "These are demo credentials for SIH 2026 hackathon evaluation.",

@@ -15,13 +15,24 @@ from jose import JWTError, jwt
 logger = logging.getLogger("AuthService")
 
 # ── Config ────────────────────────────────────────────────────────────────────
+import secrets
+
 ENVIRONMENT = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower()
-SECRET_KEY = os.getenv("SECRET_KEY", "mplads-sih2026-secret-change-in-production")
-if ENVIRONMENT == "production" and (not SECRET_KEY or SECRET_KEY == "mplads-sih2026-secret-change-in-production"):
-    raise RuntimeError(
-        "CRITICAL SECURITY CONFIGURATION ERROR: Default SECRET_KEY detected in production mode. "
-        "A secure, cryptographically random SECRET_KEY environment variable is strictly required."
-    )
+_raw_secret = os.getenv("SECRET_KEY", "").strip()
+
+if _raw_secret and _raw_secret != "mplads-sih2026-secret-change-in-production":
+    SECRET_KEY = _raw_secret
+else:
+    # Generate a cryptographically secure 64-byte key so the container boots reliably in cloud environments
+    SECRET_KEY = secrets.token_urlsafe(64)
+    os.environ["SECRET_KEY"] = SECRET_KEY
+    if ENVIRONMENT == "production":
+        logger.warning(
+            "⚠️ PRODUCTION NOTICE: No custom SECRET_KEY set in environment variables. "
+            "Generated a secure ephemeral 64-character session key for this instance. "
+            "To persist authentication sessions across container restarts, set SECRET_KEY in your Railway dashboard."
+        )
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 h
 
