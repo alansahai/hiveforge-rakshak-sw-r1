@@ -69,14 +69,10 @@ class RiskScorerService:
         return self._fraud_model, self._fraud_features
 
     def get_master_df(self) -> Optional[pd.DataFrame]:
-        """Lazily load risk reports dataset for geo and historical duplicate checks."""
-        if self._master_df is None and RISK_REPORTS_PARQUET.exists():
-            try:
-                self._master_df = pd.read_parquet(RISK_REPORTS_PARQUET)
-                logger.info(f"Loaded master reference dataset with {len(self._master_df):,} records for geo-checks")
-            except Exception as e:
-                logger.warning(f"Failed to load master reference dataset: {e}")
-        return self._master_df
+        """Lazily load risk reports dataset for geo and historical duplicate checks from shared singleton."""
+        from src.backend.services.data_loader import get_master_dataframe
+        return get_master_dataframe()
+
 
     def analyze_single_project(self, project_dict: dict) -> dict:
         """

@@ -5,9 +5,6 @@ import logging
 from pathlib import Path
 import pandas as pd
 import numpy as np
-import torch
-import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader
 from sklearn.ensemble import IsolationForest
 from sklearn.model_selection import train_test_split
 
@@ -17,29 +14,53 @@ from src.config import MODELS_DIR, DATA_DIR
 
 logger = logging.getLogger("AnomalyDetector")
 
-class PyTorchAutoencoder(nn.Module):
-    """
-    3-layer symmetric deep autoencoder: input_dim -> 128 -> 32 -> 128 -> input_dim.
-    """
-    def __init__(self, input_dim: int):
-        super(PyTorchAutoencoder, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.ReLU(),
-            nn.Linear(128, 32),
-            nn.ReLU()
-        )
-        self.decoder = nn.Sequential(
-            nn.Linear(32, 128),
-            nn.ReLU(),
-            nn.Linear(128, input_dim),
-            nn.Sigmoid()
-        )
+# Lazy PyTorch Loader to prevent ~600MB baseline memory spike at application startup
+_torch = None
+_nn = None
+_AutoencoderClass = None
 
-    def forward(self, x):
-        encoded = self.encoder(x)
-        decoded = self.decoder(encoded)
-        return decoded
+def get_torch_and_autoencoder():
+    """Lazily import torch and define PyTorchAutoencoder on demand."""
+    global _torch, _nn, _AutoencoderClass
+    if _torch is None:
+        import torch as t
+        import torch.nn as n
+        _torch = t
+        _nn = n
+
+        class _PyTorchAutoencoder(n.Module):
+            """
+            3-layer symmetric deep autoencoder: input_dim -> 128 -> 32 -> 128 -> input_dim.
+            """
+            def __init__(self, input_dim: int):
+                super(_PyTorchAutoencoder, self).__init__()
+                self.encoder = n.Sequential(
+                    n.Linear(input_dim, 128),
+                    n.ReLU(),
+                    n.Linear(128, 32),
+                    n.ReLU()
+                )
+                self.decoder = n.Sequential(
+                    n.Linear(32, 128),
+                    n.ReLU(),
+                    n.Linear(128, input_dim),
+                    n.Sigmoid()
+                )
+
+            def forward(self, x):
+                encoded = self.encoder(x)
+                decoded = self.decoder(encoded)
+                return decoded
+
+        _AutoencoderClass = _PyTorchAutoencoder
+    return _torch, _nn, _AutoencoderClass
+
+class PyTorchAutoencoder:
+    """Wrapper that delegates instantiation to the lazily loaded PyTorchAutoencoder class."""
+    def __new__(cls, input_dim: int):
+        _, _, ae_cls = get_torch_and_autoencoder()
+        return ae_cls(input_dim)
+
 
 def train_anomaly_detector(df_features: pd.DataFrame, output_dir: Path = MODELS_DIR) -> dict:
     """
@@ -103,9 +124,12 @@ def train_anomaly_detector(df_features: pd.DataFrame, output_dir: Path = MODELS_
     # -------------------------------------------------------------
     # 2. PyTorch Autoencoder
     # -------------------------------------------------------------
+    torch, nn, _ = get_torch_and_autoencoder()
+    from torch.utils.data import TensorDataset, DataLoader
     input_dim = X.shape[1]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Training PyTorch Autoencoder (input_dim={input_dim}) on {device}...")
+
     
     autoencoder = PyTorchAutoencoder(input_dim).to(device)
     criterion = nn.MSELoss()
@@ -204,6 +228,7 @@ def score_anomalies(df_features: pd.DataFrame, models_dir: Path = MODELS_DIR) ->
     with open(iso_path, "rb") as f:
         iso_meta = pickle.load(f)
         
+    torch, nn, _ = get_torch_and_autoencoder()
     ae_payload = torch.load(ae_path, map_location=torch.device("cpu"), weights_only=False)
     
     features = iso_meta['features']

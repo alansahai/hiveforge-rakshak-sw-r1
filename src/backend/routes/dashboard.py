@@ -19,25 +19,8 @@ from src.pipeline.geo_utils import check_single_project_geo_duplicate, get_distr
 router = APIRouter(prefix="/dashboard", tags=["dashboard"], dependencies=[Depends(get_current_user)])
 logger = logging.getLogger("DashboardRoutes")
 
-def _get_master_data() -> pd.DataFrame:
-    """Helper to load master scored projects or cleaned projects with caching."""
-    cached_df = cache_service.get_cached_result("master_dataframe")
-    if cached_df is not None:
-        return pd.DataFrame(cached_df)
-        
-    if RISK_REPORTS_PARQUET.exists():
-        df = pd.read_parquet(RISK_REPORTS_PARQUET)
-    elif RISK_REPORTS_CSV.exists():
-        df = pd.read_csv(RISK_REPORTS_CSV, low_memory=False)
-    elif CLEANED_DATA_PATH.exists():
-        df = pd.read_csv(CLEANED_DATA_PATH, low_memory=False)
-        if 'risk_score' not in df.columns:
-            df['risk_score'] = 25.0
-            df['risk_category'] = 'low'
-    else:
-        df = pd.DataFrame()
-        
-    return df
+from src.backend.services.data_loader import get_master_dataframe as _get_master_data
+
 
 def _get_series(df: pd.DataFrame, col: str, default: float = 0.0) -> pd.Series:
     """Helper to safely retrieve numeric pandas Series from DataFrame with fallback."""
@@ -647,31 +630,33 @@ def get_projects(
         return {"total": 0, "page": page, "page_size": page_size, "projects": []}
 
     # Apply filters
-    if state:
+    if state and isinstance(state, str):
         df = df[df['state'].astype(str).str.lower() == state.lower()]
-    if district:
+    if district and isinstance(district, str):
         df = _filter_district_fuzzy(df, district)
-    if risk_category:
+    if risk_category and isinstance(risk_category, str):
         df = df[df['risk_category'].astype(str).str.lower() == risk_category.lower()]
-    if category:
+    if category and isinstance(category, str):
         df = df[df['category'].astype(str).str.lower() == category.lower()]
 
+
     # Date-range filtering on sanction/approval date
-    if (start_date or end_date) and 'approval_date' in df.columns:
+    if ((start_date and isinstance(start_date, str)) or (end_date and isinstance(end_date, str))) and 'approval_date' in df.columns:
         app_dt = pd.to_datetime(df['approval_date'], errors='coerce')
-        if start_date:
+        if start_date and isinstance(start_date, str):
             try:
                 s_dt = pd.to_datetime(start_date)
                 df = df[app_dt >= s_dt]
                 app_dt = pd.to_datetime(df['approval_date'], errors='coerce')
             except Exception as e:
                 logger.warning(f"Error filtering by start_date {start_date}: {e}")
-        if end_date:
+        if end_date and isinstance(end_date, str):
             try:
                 e_dt = pd.to_datetime(end_date)
                 df = df[app_dt <= e_dt]
             except Exception as e:
                 logger.warning(f"Error filtering by end_date {end_date}: {e}")
+
 
     total = len(df)
 

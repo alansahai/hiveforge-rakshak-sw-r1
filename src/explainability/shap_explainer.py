@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 import pandas as pd
 import numpy as np
-import shap
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from src.config import MODELS_DIR
@@ -49,17 +48,19 @@ FEATURE_DISPLAY_NAMES = {
 
 _EXPLAINER_CACHE = {}
 
-def get_tree_explainer(model, model_key: str = "fraud_classifier") -> shap.TreeExplainer:
+def get_tree_explainer(model, model_key: str = "fraud_classifier"):
     """Lazily creates and caches a TreeExplainer for the specified model."""
     global _EXPLAINER_CACHE
     if model_key not in _EXPLAINER_CACHE:
         try:
+            import shap
             logger.info(f"Initializing TreeExplainer for {model_key}...")
             _EXPLAINER_CACHE[model_key] = shap.TreeExplainer(model)
         except Exception as e:
             logger.warning(f"Failed to initialize TreeExplainer for {model_key}: {e}")
             raise
     return _EXPLAINER_CACHE[model_key]
+
 
 
 def compute_shap_explanations(

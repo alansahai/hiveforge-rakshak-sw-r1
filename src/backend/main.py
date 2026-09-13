@@ -49,7 +49,8 @@ async def lifespan(app: FastAPI):
     
     # Preload master reference dataset in memory for instantaneous inference
     try:
-        analyze.risk_service.get_master_df()
+        from src.backend.services.data_loader import get_master_dataframe
+        get_master_dataframe()
         logger.info("Master reference dataset cached in memory successfully.")
     except Exception as e:
         logger.warning(f"Master dataset warmup skipped: {e}")

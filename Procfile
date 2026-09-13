@@ -1,1 +1,1 @@
-web: uvicorn src.backend.main:app --host 0.0.0.0 --port ${PORT:-8000}
+web: uvicorn src.backend.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --limit-concurrency 50
