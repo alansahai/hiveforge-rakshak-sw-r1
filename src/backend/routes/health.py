@@ -12,11 +12,22 @@ router = APIRouter()
 @router.get("/health")
 def health_check():
     """Liveness and health check endpoint."""
+    rss_mb = 0.0
+    try:
+        import psutil, os
+        proc = psutil.Process(os.getpid())
+        rss_mb = round(proc.memory_info().rss / (1024 * 1024), 1)
+    except Exception:
+        pass
     return {
         "status": "healthy",
+        "version": "2.1.0-memopt",
         "system": "MPLADS Anomaly Monitoring Pipeline",
+        "rss_mb": rss_mb,
         "timestamp": datetime.now().isoformat()
     }
+
+
 
 @router.get("/ready")
 def readiness_check():
