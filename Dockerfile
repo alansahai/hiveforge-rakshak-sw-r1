@@ -27,4 +27,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Launch production server
-CMD uvicorn src.backend.main:app --host 0.0.0.0 --port ${PORT}
+CMD uvicorn src.backend.main:app --host 0.0.0.0 --port ${PORT} --workers 1 --limit-concurrency 50
+
