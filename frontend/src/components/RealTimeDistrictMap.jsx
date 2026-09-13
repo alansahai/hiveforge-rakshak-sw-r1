@@ -170,20 +170,26 @@ const FALLBACK_DISTRICT_COORDS = {
 const TILE_PROVIDERS = {
   streets: {
     name: '🗺️ Streets',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
-    maxZoom: 20
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    subdomains: '',
+    maxZoom: 19
   },
   dark: {
     name: '🌃 Cyber Dark',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
-    maxZoom: 20
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    subdomains: '',
+    maxZoom: 19
   },
   satellite: {
     name: '🛰️ Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     subdomains: '',
+    maxZoom: 19
+  },
+  osm: {
+    name: '🌐 OpenStreetMap',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    subdomains: 'abc',
     maxZoom: 19
   }
 };
@@ -192,9 +198,9 @@ function createTileLayer(providerKey) {
   const provider = TILE_PROVIDERS[providerKey] || TILE_PROVIDERS.streets;
   return L.tileLayer(provider.url, {
     maxZoom: provider.maxZoom || 19,
-    subdomains: provider.subdomains !== undefined ? provider.subdomains : 'abcd',
+    subdomains: provider.subdomains !== undefined ? provider.subdomains : '',
     crossOrigin: true,
-    keepBuffer: 6,
+    keepBuffer: 8,
     updateWhenIdle: false,
     updateWhenZooming: true
   });
