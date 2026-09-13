@@ -18,5 +18,4 @@ passlib[bcrypt]>=1.7.4
 pyarrow>=12.0.0
 python-dotenv>=1.0.0
 httpx>=0.24.0
-psutil>=5.9.0
 
