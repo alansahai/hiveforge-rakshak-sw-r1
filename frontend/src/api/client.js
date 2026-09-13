@@ -1,7 +1,13 @@
 import axios from 'axios';
 
-const rawApiBase = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8000' : '');
-const API_BASE = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
+let rawApiBase = (process.env.REACT_APP_API_URL || '').trim();
+if (rawApiBase && !rawApiBase.startsWith('http://') && !rawApiBase.startsWith('https://')) {
+  rawApiBase = `https://${rawApiBase}`;
+}
+if (!rawApiBase && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+  rawApiBase = 'http://localhost:8000';
+}
+const API_BASE = rawApiBase.replace(/\/+$/, '');
 const api = axios.create({ baseURL: API_BASE, timeout: 30000 });
 
 // ── Auth token interceptor ──────────────────────────────────────────────────
