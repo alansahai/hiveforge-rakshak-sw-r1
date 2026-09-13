@@ -1,17 +1,102 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchStateDashboard, fetchProjects, fetchStatesAndDistricts, formatCrore, formatLakh } from '../api/client';
 import ProjectDetailModal from './ProjectDetailModal';
 import ContractorNetworkGraph from './ContractorNetworkGraph';
+import RealTimeDistrictMap from './RealTimeDistrictMap';
+
+// Known spelling transliterations and district aliases
+const DISTRICT_ALIASES = {
+  'thoothukudi': 'thoothukkudi',
+  'tuticorin': 'thoothukkudi',
+  'thoothukkudi': 'thoothukkudi',
+  'tiruvallur': 'thiruvallur',
+  'thiruvallur': 'thiruvallur',
+  'kanyakumari': 'kanniyakumari',
+  'kanniyakumari': 'kanniyakumari',
+  'tirupur': 'tiruppur',
+  'tiruppur': 'tiruppur',
+  'villupuram': 'viluppuram',
+  'viluppuram': 'viluppuram',
+  'tirupathur': 'tirupathur',
+  'tirupattur': 'tirupathur',
+  'tiruvarur': 'thiruvarur',
+  'thiruvarur': 'thiruvarur',
+  'kanchipuram': 'kancheepuram',
+  'kancheepuram': 'kancheepuram',
+  'tiruchirappalli': 'tiruchirappalli',
+  'trichy': 'tiruchirappalli',
+  'dharashiv': 'osmanabad',
+  'osmanabad': 'osmanabad',
+  'chhatrapati sambhajinagar': 'aurangabad',
+  'aurangabad': 'aurangabad',
+  'prayagraj': 'allahabad',
+  'allahabad': 'allahabad',
+  'ayodhya': 'faizabad',
+  'faizabad': 'faizabad',
+  'gurugram': 'gurgaon',
+  'gurgaon': 'gurgaon',
+  'mysuru': 'mysore',
+  'mysore': 'mysore',
+  'belagavi': 'belgaum',
+  'belgaum': 'belgaum',
+  'kalaburagi': 'gulbarga',
+  'gulbarga': 'kalaburagi'
+};
+
+const normalizeDistrictQuery = (str) => {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/th/g, 't')
+    .replace(/kk/g, 'k')
+    .replace(/pp/g, 'p')
+    .replace(/ll/g, 'l')
+    .replace(/nn/g, 'n')
+    .replace(/tt/g, 't')
+    .replace(/rr/g, 'r')
+    .replace(/oo/g, 'u')
+    .replace(/ee/g, 'i')
+    .replace(/[^a-z0-9]/g, '');
+};
+
+const matchesDistrict = (districtName, query) => {
+  if (!districtName || !query) return false;
+  const dNorm = districtName.toLowerCase().trim();
+  const qNorm = query.toLowerCase().trim();
+  if (dNorm.includes(qNorm)) return true;
+
+  const aliasD = DISTRICT_ALIASES[dNorm];
+  if (aliasD && (aliasD.includes(qNorm) || qNorm.includes(aliasD))) return true;
+
+  const aliasQ = DISTRICT_ALIASES[qNorm];
+  if (aliasQ && (dNorm.includes(aliasQ) || aliasQ.includes(dNorm))) return true;
+
+  const nD = normalizeDistrictQuery(dNorm);
+  const nQ = normalizeDistrictQuery(qNorm);
+  if (nD && nQ && (nD.includes(nQ) || nQ.includes(nD))) return true;
+
+  return false;
+};
 
 export default function StateDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stateFromUrl = searchParams.get('state');
   const [states, setStates] = useState([]);
-  const [selectedState, setSelectedState] = useState('Karnataka');
+  const [selectedState, setSelectedState] = useState(stateFromUrl || 'Karnataka');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Sync state if URL changes
+  useEffect(() => {
+    if (stateFromUrl && stateFromUrl !== selectedState) {
+      setSelectedState(stateFromUrl);
+    }
+  }, [stateFromUrl]);
+
   // District click drilldown states
   const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [districtSearch, setDistrictSearch] = useState('');
   const [districtProjects, setDistrictProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [riskFilter, setRiskFilter] = useState('all');
@@ -55,6 +140,17 @@ export default function StateDashboard() {
     return cat === riskFilter;
   });
 
+  // Filtered heatmap by district search query
+  const filteredHeatmap = useMemo(() => {
+    const list = data?.district_heatmap || [];
+    if (!districtSearch) return list;
+    return list.filter(d => matchesDistrict(d.district, districtSearch));
+  }, [data?.district_heatmap, districtSearch]);
+
+  const chartData = useMemo(() => {
+    return (data?.district_heatmap || []).slice(0, 8);
+  }, [data?.district_heatmap]);
+
   return (
     <div>
       <div className="page-header">
@@ -65,76 +161,119 @@ export default function StateDashboard() {
       {/* State Selector */}
       <div className="filter-bar">
         <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>SELECT STATE</label>
-        <select className="form-control" value={selectedState} onChange={e => setSelectedState(e.target.value)} style={{ minWidth: 260 }}>
-          {(states.length > 0 ? states : ['Karnataka', 'Tamil Nadu', 'Maharashtra', 'Uttar Pradesh', 'Gujarat']).map(s => (
+        <select
+          className="form-control"
+          style={{ maxWidth: 300 }}
+          value={selectedState}
+          onChange={(e) => {
+            setSelectedState(e.target.value);
+            setSearchParams({ state: e.target.value });
+          }}
+        >
+          {(states.length > 0 ? states : ['Karnataka', 'Tamil Nadu', 'Maharashtra', 'Uttar Pradesh', 'Gujarat']).map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
       </div>
 
       {loading || !data ? (
-        <div className="loading-container"><div className="spinner"></div> Loading {selectedState} data...</div>
+        <div className="loading-container"><div className="spinner"></div> Loading {selectedState} aggregate data...</div>
       ) : (
         <>
-          {/* KPI Cards */}
+          {/* Top KPI Cards */}
           <div className="stats-grid">
             <div className="stat-card">
-              <div className="stat-label">Total Projects</div>
+              <div className="stat-label">Total Monitored Projects</div>
               <div className="stat-value">{data.total_projects?.toLocaleString()}</div>
-            </div>
-            <div className="stat-card" style={{ borderLeft: '3px solid var(--risk-low)' }}>
-              <div className="stat-label">Completed</div>
-              <div className="stat-value" style={{color:'var(--risk-low)'}}>{data.completed_count?.toLocaleString()}</div>
-            </div>
-            <div className="stat-card risk-high">
-              <div className="stat-label">At Risk</div>
-              <div className="stat-value" style={{color:'var(--risk-high)'}}>{data.at_risk_count?.toLocaleString()}</div>
-            </div>
-            <div className="stat-card risk-critical">
-              <div className="stat-label">Critical</div>
-              <div className="stat-value" style={{color:'var(--risk-critical)'}}>{data.critical_count}</div>
+              <div className="stat-sub">{selectedState}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Total Sanctioned</div>
+              <div className="stat-label">Total Funds Sanctioned</div>
               <div className="stat-value">{formatCrore(data.total_sanctioned)}</div>
+              <div className="stat-sub">Allocated budget</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Total Funds Spent</div>
+              <div className="stat-value">{formatCrore(data.total_spent)}</div>
+              <div className="stat-sub">
+                {data.total_sanctioned > 0
+                  ? `${(((data.total_spent || 0) / data.total_sanctioned) * 100).toFixed(1)}% utilization`
+                  : '0%'}
+              </div>
+            </div>
+            <div className="stat-card" style={{ borderLeft: '3px solid var(--risk-critical)' }}>
+              <div className="stat-label">Critical Risk Projects</div>
+              <div className="stat-value" style={{ color: 'var(--risk-critical)' }}>{data.critical_count}</div>
+              <div className="stat-sub">Risk score &ge; 80</div>
             </div>
           </div>
 
-          {/* Compliance Scorecard + District Heatmap */}
           <div className="grid-2">
             {/* Compliance Scorecard */}
             <div className="panel">
-              <div className="panel-header"><h3>Compliance Scorecard</h3></div>
-              <div style={{display:'flex', flexDirection:'column', gap:16, padding:'8px 0'}}>
-                {[
-                  { label: 'On-Time Completion', value: data.compliance_scorecard?.on_time_completion_pct, suffix: '%', color: 'var(--risk-low)' },
-                  { label: 'Cost Efficiency', value: data.compliance_scorecard?.cost_efficiency_pct, suffix: '%', color: 'var(--accent-primary)' },
-                  { label: 'Transparency Index', value: data.compliance_scorecard?.transparency_index, suffix: '/100', color: 'var(--chart-2)' }
-                ].map((item, i) => (
-                  <div key={i}>
-                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
-                      <span style={{fontSize:'0.85rem', color:'var(--text-secondary)'}}>{item.label}</span>
-                      <span style={{fontSize:'0.85rem', fontWeight:700, color: item.color}}>{item.value}{item.suffix}</span>
-                    </div>
-                    <div className="progress-bar-container">
-                      <div className="progress-bar-fill" style={{width:`${Math.min(item.value || 0, 100)}%`, background: item.color}}></div>
-                    </div>
+              <div className="panel-header"><h3>State Compliance Scorecard</h3></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.85rem' }}>
+                    <span>On-Time Milestone Completion</span>
+                    <span style={{ fontWeight: 600 }}>{data.compliance_scorecard?.on_time_completion_pct}%</span>
                   </div>
-                ))}
+                  <div className="progress-bar-container">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${data.compliance_scorecard?.on_time_completion_pct || 0}%`,
+                        backgroundColor: (data.compliance_scorecard?.on_time_completion_pct || 0) >= 80 ? 'var(--risk-low)' : 'var(--risk-medium)'
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.85rem' }}>
+                    <span>Fiscal Cost Efficiency Rate</span>
+                    <span style={{ fontWeight: 600 }}>{data.compliance_scorecard?.cost_efficiency_pct}%</span>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${data.compliance_scorecard?.cost_efficiency_pct || 0}%`,
+                        backgroundColor: (data.compliance_scorecard?.cost_efficiency_pct || 0) >= 80 ? 'var(--accent-primary)' : 'var(--risk-high)'
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.85rem' }}>
+                    <span>Public Transparency &amp; Disclosure Index</span>
+                    <span style={{ fontWeight: 600 }}>{data.compliance_scorecard?.transparency_index}%</span>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${data.compliance_scorecard?.transparency_index || 0}%`,
+                        backgroundColor: 'var(--accent-primary)'
+                      }}
+                    ></div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* District Risk Bar Chart */}
+            {/* Top 8 Highest Risk Districts Bar Chart */}
             <div className="panel">
-              <div className="panel-header"><h3>Top 10 Districts by Risk</h3></div>
-              {data.district_heatmap && data.district_heatmap.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={data.district_heatmap.slice(0, 10)} margin={{ top: 5, right: 10, left: 0, bottom: 5 }} layout="vertical">
+              <div className="panel-header"><h3>Top Vulnerable Districts (by Avg Risk)</h3></div>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                    <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} />
-                    <YAxis type="category" dataKey="district" width={100} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} />
-                    <Tooltip contentStyle={{ background: '#1a2235', border: '1px solid rgba(99,130,190,0.15)', borderRadius: '6px' }} itemStyle={{ color: '#e2e8f0' }} />
-                    <Bar dataKey="avg_risk_score" fill="#f97316" radius={[0, 4, 4, 0]} name="Avg Risk Score" />
+                    <XAxis dataKey="district" tick={{ fill: '#94a3b8', fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                    <YAxis tick={{ fill: '#64748b', fontSize: 11 }} domain={[0, 100]} />
+                    <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }} itemStyle={{ color: 'var(--text-primary)' }} />
+                    <Bar dataKey="avg_risk_score" radius={[6, 6, 0, 0]} fill="#ef4444" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -145,13 +284,21 @@ export default function StateDashboard() {
 
           {/* District Heatmap Table with Click-to-Drilldown */}
           <div className="panel">
-            <div className="panel-header">
+            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h3 style={{ display: 'inline-block', marginRight: 10 }}>District Risk Heatmap — {selectedState}</h3>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  👉 Click any district to view its project list below ({data.district_heatmap?.length || 0} districts)
+                  👉 Click any district to view its project list below ({filteredHeatmap.length} of {data.district_heatmap?.length || 0} districts)
                 </span>
               </div>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="🔍 Search district..."
+                value={districtSearch}
+                onChange={(e) => setDistrictSearch(e.target.value)}
+                style={{ width: 180, fontSize: '0.78rem', padding: '4px 10px' }}
+              />
             </div>
             <div style={{maxHeight:360, overflowY:'auto'}}>
               <table className="data-table">
@@ -167,7 +314,7 @@ export default function StateDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(data.district_heatmap || []).map((d, i) => {
+                  {filteredHeatmap.map((d, i) => {
                     const riskCat = d.avg_risk_score >= 70 ? 'critical' : d.avg_risk_score >= 55 ? 'high' : d.avg_risk_score >= 40 ? 'medium' : 'low';
                     const isSelected = selectedDistrict === d.district;
 
@@ -260,6 +407,24 @@ export default function StateDashboard() {
                     🔴 Critical
                   </button>
                 </div>
+              </div>
+
+              {/* Real-Time District Map */}
+              <div style={{ margin: '12px 0 16px 0' }}>
+                <RealTimeDistrictMap
+                  districtName={selectedDistrict}
+                  stateName={selectedState}
+                  districtCoordinates={(() => {
+                    const distObj = (data.district_heatmap || []).find(d => 
+                      d.district.toLowerCase() === selectedDistrict.toLowerCase() ||
+                      matchesDistrict(d.district, selectedDistrict)
+                    );
+                    return distObj && distObj.lat ? { lat: distObj.lat, lon: distObj.lon } : null;
+                  })()}
+                  projects={filteredDistrictProjects}
+                  height="360px"
+                  onSelectProject={(p) => setSelectedProject(p)}
+                />
               </div>
 
               {loadingProjects ? (

@@ -95,6 +95,34 @@ npm start
 | **API Docs** | http://localhost:8000/docs |
 | **Health Check** | http://localhost:8000/health |
 
+### 5. Authentication & DEMO_MODE Configuration
+
+The platform provides a toggleable `DEMO_MODE` environment variable in `.env`:
+- **For local demo/judging:** Set `DEMO_MODE=true`. Evaluators and jury members can freely explore all `/api/dashboard/*` and `/api/alerts/*` endpoints without login friction.
+- **For any public or shared deployment:** Set `DEMO_MODE=false` and use the seeded demo accounts to log in via JWT Bearer authentication.
+
+**Seeded Demo Credentials (all use password `demo123`):**
+- `mp_demo` — Member of Parliament (Constituency View)
+- `district_demo` — District Authority (District Collector & Planning View)
+- `state_demo` — State Nodal Officer (State Compliance & District Heatmap)
+- `ministry_demo` — Ministry Official (MoSPI National Overview)
+
+### 6. Alert State Persistence & Demo Resets
+
+Alert lifecycle mutations (`acknowledge`, `investigate`, `resolve`, notes, and audit history) are automatically persisted to:
+`data/results/alert_state.json`
+
+- **Persistence across restarts:** If the backend restarts, all alert statuses, assigned investigators, timestamps, and audit notes survive seamlessly while project metrics remain aligned with the latest dataset.
+- **Resetting for a fresh demo:** To reset all alerts back to their fresh-seeded baseline, simply delete `data/results/alert_state.json`:
+  ```bash
+  # Linux/macOS
+  rm data/results/alert_state.json
+
+  # Windows (PowerShell)
+  Remove-Item data/results/alert_state.json
+  ```
+  On next backend startup, the engine will automatically re-seed fresh alerts from `risk_reports.parquet`.
+
 ---
 
 ## 📊 Dashboards

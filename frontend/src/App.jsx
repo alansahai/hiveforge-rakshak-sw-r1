@@ -9,6 +9,7 @@ import DistrictDashboard from './components/DistrictDashboard';
 import MinistryDashboard from './components/MinistryDashboard';
 import AnalyzeProject from './components/AnalyzeProject';
 import AlertPanel from './components/AlertPanel';
+import CustomChartStudio from './components/CustomChartStudio';
 import { isAuthenticated, getCurrentRole } from './api/client';
 
 // ── Protected route wrapper ──────────────────────────────────────────────────
@@ -99,6 +100,14 @@ function App() {
         element={
           <ProtectedRoute
             element={<AppLayout><AlertPanel /></AppLayout>}
+          />
+        }
+      />
+      <Route
+        path="/analytics-studio"
+        element={
+          <ProtectedRoute
+            element={<AppLayout><CustomChartStudio /></AppLayout>}
           />
         }
       />

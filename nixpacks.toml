@@ -1,16 +1,10 @@
-providers = ["python"]
-
-[variables]
-NIXPACKS_PYTHON_VERSION = "3.11"
-NIXPACKS_NODE_VERSION = "20"
-CI = "false"
-
 [phases.setup]
-nixPkgs = ["...", "nodejs_20"]
+nixPkgs = ["python311"]
 
-[phases.build]
+[phases.install]
 cmds = [
-  "cd frontend && npm install && npm run build"
+  "python -m pip install --upgrade pip",
+  "pip install -r requirements.txt"
 ]
 
 [start]

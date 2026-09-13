@@ -69,18 +69,42 @@ class MPLADSEnsembleScorer:
         ) * 100.0
         composite_score = np.clip(composite_score, 0.0, 100.0)
         
-        # 5. Risk Category Assignment
+        # 5. Risk Category Assignment and Contextual Action Recommendation
         # 0-40: low, 40-60: medium, 60-80: high, 80-100: critical
         categories = []
         actions = []
-        for score in composite_score:
-            if score >= RISK_HIGH_MAX:
+        geo_dup = df_features.get('geo_duplicate_flag', pd.Series(0, index=df_features.index)).values
+        dup_score = df_features.get('duplicate_work_score', pd.Series(0, index=df_features.index)).values
+
+        for i, score in enumerate(composite_score):
+            is_geo_dup = (i < len(geo_dup) and geo_dup[i] == 1)
+            is_same_dup = (i < len(dup_score) and dup_score[i] > 0.70)
+            is_high_fraud = (i < len(fraud_prob) and fraud_prob[i] >= 0.70)
+
+            # Escalate risk score if severe duplicate work or critical fraud probability is flagged
+            effective_score = score
+            if is_geo_dup or is_high_fraud:
+                effective_score = max(effective_score, 82.0)
+            elif is_same_dup:
+                effective_score = max(effective_score, 75.0)
+
+            composite_score[i] = effective_score
+
+            if effective_score >= RISK_HIGH_MAX or is_geo_dup or is_high_fraud:
                 categories.append('critical')
-                actions.append("Escalate immediately to MP, District Authority, and Ministry for investigation")
-            elif score >= RISK_MEDIUM_MAX:
+                if is_geo_dup:
+                    actions.append("🚨 Critical Vigilance Alert: Freeze pending disbursals; initiate joint inter-district physical inspection to verify geotagged coordinates against satellite imagery.")
+                elif is_high_fraud:
+                    actions.append("🚨 High-Probability Fraud Warning: Halt contractor payment vouchers; initiate priority forensic expenditure audit.")
+                else:
+                    actions.append("Escalate immediately to MP, District Authority, and Ministry for investigation")
+            elif effective_score >= RISK_MEDIUM_MAX or is_same_dup:
                 categories.append('high')
-                actions.append("Flag for priority audit, contractor payment verification, and on-site inspection")
-            elif score >= RISK_LOW_MAX:
+                if is_same_dup:
+                    actions.append("Flag for immediate on-site GPS verification against registered district asset inventory.")
+                else:
+                    actions.append("Flag for priority audit, contractor payment verification, and on-site inspection")
+            elif effective_score >= RISK_LOW_MAX:
                 categories.append('medium')
                 actions.append("Schedule for quarterly review; verify progress milestones")
             else:
@@ -134,7 +158,9 @@ class MPLADSEnsembleScorer:
         results['fraud_probability'] = fraud_prob.round(4)
         results['efficiency_score'] = eff_score.round(4)
         results['predicted_duration_days'] = eff_df['predicted_duration_days'].values
-        results['days_behind_schedule'] = delay_days
+        results['days_behind_schedule'] = eff_df['days_behind_schedule'].values
+        results['timeline_status'] = eff_df['timeline_status'].values
+        results['root_cause_hypothesis'] = eff_df['root_cause_hypothesis'].values
         results['explanations'] = explanations
         results['recommended_action'] = actions
         results['computed_at'] = datetime.now().isoformat()

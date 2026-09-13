@@ -25,14 +25,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger("FastAPIMain")
 
+from collections import defaultdict
+import threading
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing MPLADS backend services and checking models...")
+    env = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower()
+    secret = os.getenv("SECRET_KEY", "mplads-sih2026-secret-change-in-production")
+    if env == "production" and (not secret or secret == "mplads-sih2026-secret-change-in-production"):
+        import secrets
+        os.environ["SECRET_KEY"] = secrets.token_urlsafe(32)
+        logger.warning(
+            "⚠️ PRODUCTION NOTICE: No custom SECRET_KEY provided. Auto-generated secure ephemeral key. "
+            "For persistent authentication sessions across restarts, set SECRET_KEY in your Railway environment variables."
+        )
+
     # Verify models on startup
     iso = (MODELS_DIR / "isolation_forest.pkl").exists()
     fraud = (MODELS_DIR / "fraud_classifier.pkl").exists()
     eff = (MODELS_DIR / "efficiency_analyzer.pkl").exists()
     logger.info(f"Model status on startup: IsolationForest={iso}, FraudClassifier={fraud}, EfficiencyAnalyzer={eff}")
+    
+    # Preload master reference dataset in memory for instantaneous inference
+    try:
+        analyze.risk_service.get_master_df()
+        logger.info("Master reference dataset cached in memory successfully.")
+    except Exception as e:
+        logger.warning(f"Master dataset warmup skipped: {e}")
+
     logger.info("FastAPI backend initialized successfully.")
     yield
     logger.info("FastAPI backend shutting down.")
@@ -44,18 +65,49 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware for local React and frontend dashboards
+# CORS configuration: supports explicit origins, Vercel deployments (*.vercel.app), and wildcard
+allowed_str = os.getenv("ALLOWED_ORIGINS", os.getenv("CORS_ORIGINS", "*")).strip()
+if allowed_str == "*" or not allowed_str:
+    cors_origins = ["*"]
+    cors_regex = None
+else:
+    cors_origins = [o.strip() for o in allowed_str.split(",") if o.strip()]
+    cors_regex = r"https:\/\/.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
+    allow_origin_regex=cors_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Request logging middleware
+# In-memory sliding window rate limiter (200 requests/minute per client IP)
+_RATE_LIMIT_STORE = defaultdict(list)
+_RATE_LOCK = threading.Lock()
+RATE_LIMIT_WINDOW = 60.0
+MAX_REQUESTS_PER_WINDOW = 200
+
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def rate_limiting_and_logging_middleware(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    
+    # Exclude static assets and health check from rate limiting
+    path = request.url.path
+    if not (path.startswith("/static") or path in ("/health", "/ready", "/docs", "/openapi.json")):
+        with _RATE_LOCK:
+            # Clean expired timestamps
+            _RATE_LIMIT_STORE[client_ip] = [t for t in _RATE_LIMIT_STORE[client_ip] if now - t < RATE_LIMIT_WINDOW]
+            if len(_RATE_LIMIT_STORE[client_ip]) >= MAX_REQUESTS_PER_WINDOW:
+                logger.warning(f"Rate limit exceeded for IP: {client_ip}")
+                return JSONResponse(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    content={"detail": "Too many requests. Please throttle your request rate."}
+                )
+            _RATE_LIMIT_STORE[client_ip].append(now)
+
     start_time = time.time()
     response = await call_next(request)
     duration = time.time() - start_time

@@ -97,127 +97,198 @@ def engineer_financial_features(df: pd.DataFrame) -> pd.DataFrame:
     return feats
 
 def engineer_timeline_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Engineers 12 timeline and schedule metrics."""
+    """Engineers 14 timeline and schedule metrics with strict target separation."""
     feats = pd.DataFrame(index=df.index)
     
-    app_date = pd.to_datetime(df['approval_date'])
-    exp_comp = pd.to_datetime(df.get('expected_completion_date', df['completion_date']))
-    act_comp = pd.to_datetime(df.get('actual_completion_date', exp_comp))
-    
+    app_series = df.get('approval_date', pd.Series(pd.Timestamp('2023-01-01'), index=df.index))
+    app_date = pd.to_datetime(app_series)
+    exp_series = df.get('expected_completion_date', df.get('completion_date', pd.Series(pd.NaT, index=df.index)))
+    exp_comp = pd.to_datetime(exp_series).fillna(app_date + pd.Timedelta(days=365))
+    act_series = df.get('actual_completion_date', pd.Series(pd.NaT, index=df.index))
+    act_comp = pd.to_datetime(act_series)
     now = pd.to_datetime('2026-09-04')
     
-    # 1. project_duration_days
-    duration_days = (exp_comp - app_date).dt.days.clip(lower=1)
-    feats['project_duration_days'] = duration_days
+    planned_duration = (exp_comp - app_date).dt.days.clip(lower=30)
+    feats['planned_duration_days'] = planned_duration
     
-    # 2. days_behind_schedule
-    delay = np.where(act_comp.notna(), (act_comp - exp_comp).dt.days, (now - exp_comp).dt.days)
-    feats['days_behind_schedule'] = pd.Series(delay, index=df.index).clip(lower=0)
+    # 1. Genuine actual duration if completed (empirical observations), else planned
+    actual_dur = (act_comp - app_date).dt.days
+    has_valid_actual = act_comp.notna() & (actual_dur >= 15)
+    feats['actual_duration_days'] = np.where(has_valid_actual, actual_dur, np.nan)
     
-    # 3. days_to_progress
-    feats['days_to_progress'] = (duration_days * 0.25).astype(int).clip(lower=5)
+    # Target variable for Efficiency Regressor (unscaled natural days):
+    feats['project_duration_days'] = np.where(has_valid_actual, actual_dur, planned_duration).clip(30, 950)
     
-    # 4. progress_velocity
+    # 2. days_behind_schedule (observable in-flight milestone lag)
     prog_pct = _safe_num(df, 'progress_percentage', 70.0).clip(0.0, 100.0)
-    feats['progress_velocity'] = _safe_div(prog_pct, duration_days)
+    elapsed_days = (now - app_date).dt.days.clip(lower=0)
+    expected_prog = (_safe_div(elapsed_days, planned_duration) * 100.0).clip(0.0, 100.0)
     
-    # 5. estimated_days_to_complete
+    if 'days_behind_schedule' in df.columns and df['days_behind_schedule'].notna().any():
+        feats['days_behind_schedule'] = pd.to_numeric(df['days_behind_schedule'], errors='coerce').fillna(0).clip(lower=0)
+    else:
+        # For completed works:
+        delay_comp = (act_comp - exp_comp).dt.days.clip(lower=0)
+        # For ongoing works: delay past expected finish date, or shortfall in progress
+        delay_overdue = (now - exp_comp).dt.days.clip(lower=0)
+        shortfall_days = _safe_div((expected_prog - prog_pct).clip(lower=0.0), 100.0) * planned_duration
+        delay_ongoing = np.maximum(delay_overdue, shortfall_days)
+        
+        delay = np.where(act_comp.notna(), delay_comp, delay_ongoing)
+        feats['days_behind_schedule'] = pd.Series(delay, index=df.index).fillna(0).clip(lower=0)
+    
+    # 3. In-flight progress velocity
+    feats['days_to_progress'] = (planned_duration * 0.25).astype(int).clip(lower=5)
+    feats['progress_velocity'] = _safe_div(prog_pct, np.maximum(elapsed_days, 15.0))
+    
+    # 4. estimated_days_to_complete
     days_rem = (100.0 - prog_pct).clip(lower=0.0)
     feats['estimated_days_to_complete'] = _safe_div(days_rem, feats['progress_velocity'] + 1e-4)
     
-    # 6. milestone_delay_flag
+    # 5. milestone_delay_flag
     feats['milestone_delay_flag'] = (feats['days_behind_schedule'] > 30).astype(int)
     
-    # 7. timeline_consistency
-    feats['timeline_consistency'] = (1.0 - (feats['days_behind_schedule'] / (duration_days + 1e-4))).clip(0.1, 1.0)
+    # 6. timeline_consistency
+    feats['timeline_consistency'] = (1.0 - (feats['days_behind_schedule'] / (planned_duration + 1e-4))).clip(0.1, 1.0)
     
-    # 8. project_age_days
-    feats['project_age_days'] = (now - app_date).dt.days.clip(lower=0)
+    # 7. project_age_days
+    feats['project_age_days'] = elapsed_days
     
-    # 9. completion_rate
+    # 8. completion_rate
     sanctioned = _safe_num(df, 'amount_sanctioned', 500000.0).clip(lower=1000.0)
     spent = _safe_num(df, 'amount_spent', 0.0).clip(lower=0.0)
-    feats['completion_rate'] = _safe_div(spent, sanctioned) * 100.0
+    feats['completion_rate'] = (_safe_div(spent, sanctioned) * 100.0).clip(0.0, 300.0)
     
-    # 10. weeks_to_expected_finish
-    feats['weeks_to_expected_finish'] = _safe_div((exp_comp - now).dt.days, 7.0)
+    # 9. weeks_to_expected_finish
+    feats['weeks_to_expected_finish'] = _safe_div((exp_comp - now).dt.days, 7.0).clip(-52.0, 52.0)
     
-    # 11. schedule_variance
-    expected_prog = (_safe_div((now - app_date).dt.days, duration_days) * 100.0).clip(0.0, 100.0)
+    # 10. schedule_variance
     feats['schedule_variance'] = _safe_div(expected_prog - prog_pct, expected_prog + 1e-4).clip(-2.0, 2.0)
     
-    # 12. activity_gap_days
+    # 11. activity_gap_days
     feats['activity_gap_days'] = np.clip(feats['days_behind_schedule'] * 0.3 + 10, 5, 90)
     
     return feats
 
+REFERENCE_STATS_PATH = MODELS_DIR / "reference_stats.pkl"
+
+def _load_reference_stats() -> dict:
+    """Loads reference population statistics for single-project inference calibration."""
+    if REFERENCE_STATS_PATH.exists():
+        try:
+            with open(REFERENCE_STATS_PATH, "rb") as f:
+                return pickle.load(f)
+        except Exception:
+            pass
+    return {}
+
 def engineer_geographic_contractor_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Engineers 12 geographic and contractor reputation features."""
+    """Engineers 12 geographic and contractor reputation features calibrated against reference population."""
     feats = pd.DataFrame(index=df.index)
     sanctioned = _safe_num(df, 'amount_sanctioned', 500000.0).clip(lower=1000.0)
     spent = _safe_num(df, 'amount_spent', 0.0).clip(lower=0.0)
     prog = _safe_num(df, 'progress_percentage', 70.0)
     
+    is_multi = len(df) > 1
+    ref = _load_reference_stats() if not is_multi else {}
+    nat_mean = ref.get('national_mean_cost', 500000.0)
+    nat_std = ref.get('national_std_cost', 150000.0)
+    
     # 1. state_avg_project_cost
-    state_costs = df.groupby('state')['amount_sanctioned'].transform('mean') if len(df) > 1 and 'state' in df.columns else sanctioned
-    feats['state_avg_project_cost'] = state_costs.fillna(sanctioned.mean())
+    if is_multi and 'state' in df.columns:
+        feats['state_avg_project_cost'] = df.groupby('state')['amount_sanctioned'].transform('mean').fillna(sanctioned.mean())
+    elif 'state' in df.columns and ref.get('state_avg_cost'):
+        state_val = str(df['state'].iloc[0]).strip().title()
+        feats['state_avg_project_cost'] = pd.Series(ref['state_avg_cost'].get(state_val, nat_mean), index=df.index)
+    else:
+        feats['state_avg_project_cost'] = pd.Series(nat_mean, index=df.index)
     
     # 2. state_completion_rate
-    state_comp = df.groupby('state')['progress_percentage'].transform(lambda s: (pd.to_numeric(s, errors='coerce') >= 90.0).mean() * 100.0) if len(df) > 1 and 'state' in df.columns else pd.Series(75.0, index=df.index)
-    feats['state_completion_rate'] = state_comp.fillna(75.0)
+    if is_multi and 'state' in df.columns:
+        feats['state_completion_rate'] = df.groupby('state')['progress_percentage'].transform(lambda s: (pd.to_numeric(s, errors='coerce') >= 90.0).mean() * 100.0).fillna(75.0)
+    elif 'state' in df.columns and ref.get('state_comp_rate'):
+        state_val = str(df['state'].iloc[0]).strip().title()
+        feats['state_completion_rate'] = pd.Series(ref['state_comp_rate'].get(state_val, 75.0), index=df.index)
+    else:
+        feats['state_completion_rate'] = pd.Series(75.0, index=df.index)
     
     # 3. district_workload
-    district_counts = df.groupby('district')['project_id'].transform('count') if len(df) > 1 and 'district' in df.columns else pd.Series(10, index=df.index)
-    feats['district_workload'] = district_counts.fillna(10)
+    if is_multi and 'district' in df.columns:
+        feats['district_workload'] = df.groupby('district')['project_id'].transform('count').fillna(10)
+    elif 'district' in df.columns and ref.get('district_workload'):
+        dist_val = str(df['district'].iloc[0]).strip().title()
+        feats['district_workload'] = pd.Series(ref['district_workload'].get(dist_val, 15), index=df.index)
+    else:
+        feats['district_workload'] = pd.Series(15, index=df.index)
     
     # 4. geographic_anomaly_score
-    dist_mean = df.groupby('district')['amount_sanctioned'].transform('mean').fillna(sanctioned.mean()) if len(df) > 1 and 'district' in df.columns else sanctioned
-    dist_std = df.groupby('district')['amount_sanctioned'].transform('std').fillna(100000.0) if len(df) > 1 and 'district' in df.columns else pd.Series(100000.0, index=df.index)
-    feats['geographic_anomaly_score'] = _safe_div(sanctioned - dist_mean, dist_std + 1.0).clip(-3.0, 3.0)
+    if is_multi and 'district' in df.columns:
+        dist_mean = df.groupby('district')['amount_sanctioned'].transform('mean').fillna(sanctioned.mean())
+        dist_std = df.groupby('district')['amount_sanctioned'].transform('std').fillna(100000.0)
+        feats['geographic_anomaly_score'] = _safe_div(sanctioned - dist_mean, dist_std + 1.0).clip(-3.0, 3.0)
+    elif 'district' in df.columns and ref.get('district_means'):
+        dist_val = str(df['district'].iloc[0]).strip().title()
+        d_m = ref['district_means'].get(dist_val, nat_mean)
+        d_s = ref['district_stds'].get(dist_val, nat_std)
+        feats['geographic_anomaly_score'] = _safe_div(sanctioned - d_m, d_s + 1.0).clip(-3.0, 3.0)
+    else:
+        feats['geographic_anomaly_score'] = pd.Series(0.0, index=df.index)
     
     # 5. contractor_project_count
-    contractor_counts = df.groupby('contractor')['approval_id'].transform('count') if len(df) > 1 and 'contractor' in df.columns else pd.Series(1, index=df.index)
-    feats['contractor_project_count'] = contractor_counts.fillna(1)
+    if is_multi and 'contractor' in df.columns:
+        feats['contractor_project_count'] = df.groupby('contractor')['approval_id'].transform('count').fillna(1)
+    elif 'contractor' in df.columns and ref.get('contractor_counts'):
+        c_val = str(df['contractor'].iloc[0]).strip()
+        cnt = ref['contractor_counts'].get(c_val, int(df.get('previous_contractor_projects', pd.Series(1)).iloc[0]))
+        feats['contractor_project_count'] = pd.Series(cnt, index=df.index)
+    else:
+        feats['contractor_project_count'] = pd.Series(int(df.get('previous_contractor_projects', pd.Series(1)).iloc[0]), index=df.index)
     
     # 6. contractor_concurrency
     feats['contractor_concurrency'] = np.clip(feats['contractor_project_count'], 1, 20)
     
     # 7. contractor_history_overrun_rate
     is_overrun = (spent > sanctioned * 1.1).astype(float)
-    if len(df) > 1 and 'contractor' in df.columns:
-        contractor_overrun = is_overrun.groupby(df['contractor']).mean().to_dict()
-        feats['contractor_history_overrun_rate'] = df['contractor'].map(contractor_overrun).fillna(0.05)
+    if is_multi and 'contractor' in df.columns:
+        feats['contractor_history_overrun_rate'] = df['contractor'].map(is_overrun.groupby(df['contractor']).mean().to_dict()).fillna(0.05)
+    elif 'contractor' in df.columns and ref.get('contractor_overrun'):
+        c_val = str(df['contractor'].iloc[0]).strip()
+        ov = ref['contractor_overrun'].get(c_val, 0.05 if int(df.get('previous_contractor_overruns', pd.Series(0)).iloc[0]) == 0 else 0.30)
+        feats['contractor_history_overrun_rate'] = pd.Series(ov, index=df.index)
     else:
         feats['contractor_history_overrun_rate'] = pd.Series(0.05, index=df.index)
         
     # 8. contractor_completion_rate
     is_completed = (prog >= 90.0).astype(float)
-    if len(df) > 1 and 'contractor' in df.columns:
-        contractor_completed = is_completed.groupby(df['contractor']).mean().to_dict()
-        feats['contractor_completion_rate'] = df['contractor'].map(contractor_completed).fillna(0.85)
+    if is_multi and 'contractor' in df.columns:
+        feats['contractor_completion_rate'] = df['contractor'].map(is_completed.groupby(df['contractor']).mean().to_dict()).fillna(0.85)
+    elif 'contractor' in df.columns and ref.get('contractor_comp'):
+        c_val = str(df['contractor'].iloc[0]).strip()
+        feats['contractor_completion_rate'] = pd.Series(ref['contractor_comp'].get(c_val, 0.85), index=df.index)
     else:
         feats['contractor_completion_rate'] = pd.Series(0.85, index=df.index)
         
     # 9. contractor_avg_cost_inflation
     inflation = _safe_div(spent - sanctioned, sanctioned).clip(lower=0.0)
-    if len(df) > 1 and 'contractor' in df.columns:
-        contractor_inflation = inflation.groupby(df['contractor']).mean().to_dict()
-        feats['contractor_avg_cost_inflation'] = df['contractor'].map(contractor_inflation).fillna(0.02)
+    if is_multi and 'contractor' in df.columns:
+        feats['contractor_avg_cost_inflation'] = df['contractor'].map(inflation.groupby(df['contractor']).mean().to_dict()).fillna(0.02)
     else:
         feats['contractor_avg_cost_inflation'] = pd.Series(0.02, index=df.index)
         
     # 10. location_duplicate_flag
-    feats['location_duplicate_flag'] = df.duplicated(subset=['location', 'amount_sanctioned'], keep=False).astype(int) if len(df) > 1 and 'location' in df.columns else pd.Series(0, index=df.index)
+    feats['location_duplicate_flag'] = df.duplicated(subset=['location', 'amount_sanctioned'], keep=False).astype(int) if is_multi and 'location' in df.columns else pd.Series(0, index=df.index)
     
     # 11. district_risk_score
-    if len(df) > 1 and 'district' in df.columns:
-        dist_overrun = is_overrun.groupby(df['district']).mean().to_dict()
-        feats['district_risk_score'] = df['district'].map(dist_overrun).fillna(0.10).clip(0.0, 1.0)
+    if is_multi and 'district' in df.columns:
+        feats['district_risk_score'] = df['district'].map(is_overrun.groupby(df['district']).mean().to_dict()).fillna(0.10).clip(0.0, 1.0)
+    elif 'district' in df.columns and ref.get('district_risks'):
+        d_val = str(df['district'].iloc[0]).strip().title()
+        feats['district_risk_score'] = pd.Series(ref['district_risks'].get(d_val, 0.10), index=df.index)
     else:
         feats['district_risk_score'] = pd.Series(0.10, index=df.index)
         
     # 12. same_category_proximity
-    if len(df) > 1 and 'district' in df.columns and 'category' in df.columns:
+    if is_multi and 'district' in df.columns and 'category' in df.columns:
         cat_dist_count = df.groupby(['district', 'category'])['project_id'].transform('count')
         feats['same_category_proximity'] = cat_dist_count.fillna(1).clip(1, 100)
     else:
@@ -226,17 +297,27 @@ def engineer_geographic_contractor_features(df: pd.DataFrame) -> pd.DataFrame:
     return feats
 
 def engineer_pattern_anomaly_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Engineers 11 pattern recognition and anomaly features."""
+    """Engineers 11 pattern recognition and anomaly features calibrated against reference population."""
     feats = pd.DataFrame(index=df.index)
     
     sanctioned = _safe_num(df, 'amount_sanctioned', 500000.0).clip(lower=1000.0)
     spent = _safe_num(df, 'amount_spent', 0.0).clip(lower=0.0)
     
+    is_multi = len(df) > 1
+    ref = _load_reference_stats() if not is_multi else {}
+    nat_mean = ref.get('national_mean_cost', 500000.0)
+    nat_std = ref.get('national_std_cost', 150000.0)
+    
     # 1. work_category_outlier
-    if len(df) > 1 and 'category' in df.columns:
+    if is_multi and 'category' in df.columns:
         cat_mean = df.groupby('category')['amount_sanctioned'].transform('mean').fillna(sanctioned.mean())
         cat_std = df.groupby('category')['amount_sanctioned'].transform('std').fillna(100000.0)
         feats['work_category_outlier'] = _safe_div(sanctioned - cat_mean, cat_std + 1.0).clip(-3.0, 3.0)
+    elif 'category' in df.columns and ref.get('category_means'):
+        cat_val = str(df['category'].iloc[0]).strip()
+        c_m = ref['category_means'].get(cat_val, nat_mean)
+        c_s = ref['category_stds'].get(cat_val, nat_std)
+        feats['work_category_outlier'] = _safe_div(sanctioned - c_m, c_s + 1.0).clip(-3.0, 3.0)
     else:
         feats['work_category_outlier'] = pd.Series(0.0, index=df.index)
         
@@ -367,22 +448,56 @@ def engineer_features(df: pd.DataFrame, is_training: bool = False) -> pd.DataFra
     all_features[numeric_cols] = all_features[numeric_cols].replace([np.inf, -np.inf], np.nan).fillna(0.0)
     
     # ML continuous columns
-    ml_cols = [c for c in numeric_cols if c not in [
-        'project_id', 'approval_id', 'audit_trigger_score', 
-        'cost_inflation_flag', 'milestone_delay_flag', 'ghost_project_indicator',
-        'suspicious_timing', 'cost_round_number_flag', 'location_duplicate_flag',
-        'geo_duplicate_flag', 'work_category_mismatch'
-    ]]
+    # Strictly exclude targets, IDs, and discrete flags from MinMaxScaler
+    non_scaled_cols = [
+        'project_id', 'approval_id', 
+        'project_duration_days', 'actual_duration_days', 'planned_duration_days',
+        'audit_trigger_score', 'cost_inflation_flag', 'milestone_delay_flag', 
+        'ghost_project_indicator', 'suspicious_timing', 'cost_round_number_flag', 
+        'location_duplicate_flag', 'geo_duplicate_flag', 'work_category_mismatch',
+        'is_fraud'
+    ]
+    ml_cols = [c for c in numeric_cols if c not in non_scaled_cols]
     
     scaler_path = MODELS_DIR / "scaler.pkl"
     if len(all_features) > 1:
+        # 1. Compute and persist empirical reference population statistics
+        try:
+            sanctioned_raw = _safe_num(df, 'amount_sanctioned', 500000.0)
+            spent_raw = _safe_num(df, 'amount_spent', 0.0)
+            prog_raw = _safe_num(df, 'progress_percentage', 70.0)
+            is_overrun_s = (spent_raw > sanctioned_raw * 1.1).astype(float)
+            
+            ref_payload = {
+                'state_avg_cost': df.groupby('state')['amount_sanctioned'].mean().to_dict() if 'state' in df.columns else {},
+                'state_comp_rate': df.groupby('state')['progress_percentage'].apply(lambda s: (pd.to_numeric(s, errors='coerce') >= 90.0).mean() * 100.0).to_dict() if 'state' in df.columns else {},
+                'district_workload': df.groupby('district')['project_id'].count().to_dict() if 'district' in df.columns and 'project_id' in df.columns else {},
+                'district_means': df.groupby('district')['amount_sanctioned'].mean().to_dict() if 'district' in df.columns else {},
+                'district_stds': df.groupby('district')['amount_sanctioned'].std().to_dict() if 'district' in df.columns else {},
+                'district_risks': is_overrun_s.groupby(df['district']).mean().to_dict() if 'district' in df.columns else {},
+                'category_means': df.groupby('category')['amount_sanctioned'].mean().to_dict() if 'category' in df.columns else {},
+                'category_stds': df.groupby('category')['amount_sanctioned'].std().to_dict() if 'category' in df.columns else {},
+                'contractor_counts': df.groupby('contractor')['approval_id'].count().to_dict() if 'contractor' in df.columns and 'approval_id' in df.columns else {},
+                'contractor_overrun': is_overrun_s.groupby(df['contractor']).mean().to_dict() if 'contractor' in df.columns else {},
+                'contractor_comp': (prog_raw >= 90.0).astype(float).groupby(df['contractor']).mean().to_dict() if 'contractor' in df.columns else {},
+                'national_mean_cost': float(sanctioned_raw.mean()),
+                'national_std_cost': float(sanctioned_raw.std()) if len(sanctioned_raw) > 1 else 150000.0
+            }
+            with open(REFERENCE_STATS_PATH, "wb") as f:
+                pickle.dump(ref_payload, f)
+            logger.info(f"Reference population statistics saved to {REFERENCE_STATS_PATH}")
+        except Exception as ref_err:
+            logger.warning(f"Could not persist reference stats: {ref_err}")
+
+        # 2. Fit and transform scaler on continuous ML features only
         scaler = MinMaxScaler()
         all_features[ml_cols] = scaler.fit_transform(all_features[ml_cols])
         try:
             with open(scaler_path, "wb") as f:
                 pickle.dump({'scaler': scaler, 'ml_cols': ml_cols}, f)
-        except Exception:
-            pass
+            logger.info(f"Scaler saved to {scaler_path} with {len(ml_cols)} features (target excluded)")
+        except Exception as sc_err:
+            logger.warning(f"Could not save scaler: {sc_err}")
             
         # Export Feature Matrix for training/batch
         FEATURE_DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -398,6 +513,7 @@ def engineer_features(df: pd.DataFrame, is_training: bool = False) -> pd.DataFra
             "numerical_features_count": len(ml_cols),
             "total_records": len(all_features),
             "generated_at": datetime.now().isoformat(),
+            "target_variable": "project_duration_days (unscaled, days)",
             "top_high_variance_features": sorted_importance[:15],
             "feature_types": {col: str(all_features[col].dtype) for col in all_features.columns}
         }
@@ -406,18 +522,33 @@ def engineer_features(df: pd.DataFrame, is_training: bool = False) -> pd.DataFra
             json.dump(feature_metadata, f, indent=2)
         logger.info(f"Feature metadata JSON saved to {FEATURE_METADATA_PATH}")
     else:
-        # Single sample inference
+        # Single sample inference: use trained reference scaler with exact column ordering
         if scaler_path.exists():
             try:
                 with open(scaler_path, "rb") as f:
                     meta = pickle.load(f)
                 saved_scaler = meta['scaler']
-                saved_cols = [c for c in meta['ml_cols'] if c in all_features.columns]
-                all_features[saved_cols] = saved_scaler.transform(all_features[saved_cols])
-            except Exception:
-                all_features[ml_cols] = np.clip(all_features[ml_cols], 0.0, 1.0)
+                expected_cols = meta['ml_cols']
+                # Ensure all expected columns exist in input, default missing to 0.0
+                for col in expected_cols:
+                    if col not in all_features.columns:
+                        all_features[col] = 0.0
+                all_features[expected_cols] = saved_scaler.transform(all_features[expected_cols])
+                # Preserve physical milestone lag in natural days for downstream consumers
+                if 'days_behind_schedule' in time_df.columns:
+                    all_features['days_behind_schedule'] = time_df['days_behind_schedule'].clip(lower=0)
+            except Exception as inf_err:
+                logger.warning(f"Single-project scaler transformation error: {inf_err}")
+                # Safe bounded normalization for continuous features
+                scaled_subset = [c for c in ml_cols if c in all_features.columns]
+                all_features[scaled_subset] = np.clip(all_features[scaled_subset], 0.0, 1.0)
+                if 'days_behind_schedule' in time_df.columns:
+                    all_features['days_behind_schedule'] = time_df['days_behind_schedule'].clip(lower=0)
         else:
-            all_features[ml_cols] = np.clip(all_features[ml_cols], 0.0, 1.0)
+            scaled_subset = [c for c in ml_cols if c in all_features.columns]
+            all_features[scaled_subset] = np.clip(all_features[scaled_subset], 0.0, 1.0)
+            if 'days_behind_schedule' in time_df.columns:
+                all_features['days_behind_schedule'] = time_df['days_behind_schedule'].clip(lower=0)
             
     return all_features
 

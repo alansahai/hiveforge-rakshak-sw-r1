@@ -65,3 +65,4 @@ DATA_QUALITY_LOG = LOGS_DIR / "data_quality.log"
 
 RISK_REPORTS_PARQUET = DATA_DIR / "results" / "risk_reports.parquet"
 RISK_REPORTS_CSV = DATA_DIR / "results" / "risk_reports.csv"
+ALERT_STATE_PATH = DATA_DIR / "results" / "alert_state.json"

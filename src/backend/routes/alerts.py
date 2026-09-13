@@ -49,6 +49,21 @@ def list_alerts(
     }
 
 
+@router.get("/audit-trail", summary="Retrieve append-only system audit trail")
+def get_audit_trail(
+    alert_id: Optional[str] = Query(None, description="Optional alert ID filter"),
+    limit: int = Query(100, ge=1, le=500)
+):
+    """
+    Returns immutable append-only audit events for accountability and compliance verification.
+    """
+    events = alert_engine.get_audit_trail(alert_id=alert_id, limit=limit)
+    return {
+        "total_events": len(events),
+        "audit_events": events
+    }
+
+
 @router.get("/{alert_id}", summary="Get single alert with full audit trail")
 def get_alert(alert_id: str):
     """Retrieve a single alert including its complete `status_history` audit trail."""

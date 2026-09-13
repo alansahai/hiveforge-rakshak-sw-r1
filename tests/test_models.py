@@ -21,7 +21,10 @@ class TestModels(unittest.TestCase):
             'cost_deviation_pct': np.random.uniform(-10, 50, n),
             'days_behind_schedule': np.random.uniform(0, 100, n),
             'cost_round_number_flag': np.random.choice([0, 1], n),
-            'audit_trigger_score': np.random.choice([0, 1], n)
+            'audit_trigger_score': np.random.choice([0, 1], n),
+            'project_duration_days': np.random.uniform(60, 400, n),
+            'planned_duration_days': np.random.uniform(60, 400, n),
+            'progress_percentage': np.random.uniform(50, 100, n)
         })
 
     def test_model_training_and_inference(self):

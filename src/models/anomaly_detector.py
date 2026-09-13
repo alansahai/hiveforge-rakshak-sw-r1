@@ -78,15 +78,21 @@ def train_anomaly_detector(df_features: pd.DataFrame, output_dir: Path = MODELS_
     )
     iso_forest.fit(X_train)
     
-    # Compute baseline score bounds
+    # Compute baseline score bounds and percentiles
     val_iso_raw = -iso_forest.score_samples(X_val)
     iso_min = float(val_iso_raw.min())
+    iso_p50 = float(np.percentile(val_iso_raw, 50))
+    iso_p85 = float(np.percentile(val_iso_raw, 85))
+    iso_p95 = float(np.percentile(val_iso_raw, 95))
     iso_max = float(val_iso_raw.max())
     
     iso_meta = {
         'model': iso_forest,
         'features': feature_cols,
         'score_min': iso_min,
+        'score_p50': iso_p50,
+        'score_p85': iso_p85,
+        'score_p95': iso_p95,
         'score_max': iso_max
     }
     iso_path = output_dir / "isolation_forest.pkl"
@@ -129,6 +135,8 @@ def train_anomaly_detector(df_features: pd.DataFrame, output_dir: Path = MODELS_
         
     error_mean = float(np.mean(val_errors))
     error_std = float(np.std(val_errors))
+    error_p50 = float(np.percentile(val_errors, 50))
+    error_p90 = float(np.percentile(val_errors, 90))
     ae_threshold = error_mean + 2.0 * error_std
     logger.info(f"Autoencoder validation reconstruction error: mean={error_mean:.4f}, std={error_std:.4f}, threshold={ae_threshold:.4f}")
     
@@ -139,7 +147,9 @@ def train_anomaly_detector(df_features: pd.DataFrame, output_dir: Path = MODELS_
         'features': feature_cols,
         'threshold': ae_threshold,
         'error_mean': error_mean,
-        'error_std': error_std
+        'error_std': error_std,
+        'error_p50': error_p50,
+        'error_p90': error_p90
     }
     ae_pt_path = output_dir / "autoencoder.pt"
     ae_pth_path = output_dir / "autoencoder.pth"
@@ -182,6 +192,7 @@ def train_anomaly_detector(df_features: pd.DataFrame, output_dir: Path = MODELS_
 def score_anomalies(df_features: pd.DataFrame, models_dir: Path = MODELS_DIR) -> pd.DataFrame:
     """
     Scores input feature matrix using ensemble of Isolation Forest and Autoencoder.
+    Applies calibrated percentile scaling against reference population distributions.
     Returns DataFrame with anomaly_score (0-1), is_anomalous (bool), method (str).
     """
     iso_path = models_dir / "isolation_forest.pkl"
@@ -196,17 +207,40 @@ def score_anomalies(df_features: pd.DataFrame, models_dir: Path = MODELS_DIR) ->
     ae_payload = torch.load(ae_path, map_location=torch.device("cpu"), weights_only=False)
     
     features = iso_meta['features']
-    X = df_features[features].values.astype(np.float32)
+    
+    # Ensure all required features are present
+    X_df = pd.DataFrame(index=df_features.index)
+    for col in features:
+        if col in df_features.columns:
+            X_df[col] = df_features[col]
+        else:
+            X_df[col] = 0.0
+            
+    X = X_df[features].values.astype(np.float32)
     X = np.nan_to_num(X, nan=0.0, posinf=1.0, neginf=0.0)
     
-    # 1. Isolation Forest score
+    # 1. Isolation Forest score with piecewise-linear percentile calibration
     raw_iso = -iso_meta['model'].score_samples(X)
-    s_min = iso_meta.get('score_min', raw_iso.min())
-    s_max = iso_meta.get('score_max', raw_iso.max())
-    iso_scores = np.clip((raw_iso - s_min) / (s_max - s_min + 1e-6), 0.0, 1.0)
-    iso_flag = iso_scores > 0.70
+    s_min = iso_meta.get('score_min', float(raw_iso.min()))
+    s_p50 = iso_meta.get('score_p50', float(np.median(raw_iso)))
+    s_p90 = iso_meta.get('score_p90', float(np.percentile(raw_iso, 90)))
+    s_max = iso_meta.get('score_max', float(raw_iso.max()))
     
-    # 2. Autoencoder score
+    # Nominal projects (<= p50) map to [0.05, 0.20]
+    # Moderate divergence (p50 to p90) maps to [0.20, 0.55]
+    # Severe anomalies (> p90) map to [0.55, 1.00]
+    iso_scores = np.where(
+        raw_iso <= s_p50,
+        0.05 + np.clip((raw_iso - s_min) / (s_p50 - s_min + 1e-6) * 0.15, 0.0, 0.15),
+        np.where(
+            raw_iso <= s_p90,
+            0.20 + np.clip((raw_iso - s_p50) / (s_p90 - s_p50 + 1e-6) * 0.35, 0.0, 0.35),
+            0.55 + np.clip((raw_iso - s_p90) / (s_max - s_p90 + 1e-6) * 0.45, 0.0, 0.45)
+        )
+    )
+    iso_flag = iso_scores > 0.60
+    
+    # 2. Autoencoder reconstruction score
     input_dim = ae_payload['input_dim']
     autoencoder = PyTorchAutoencoder(input_dim)
     autoencoder.load_state_dict(ae_payload['state_dict'])
@@ -218,12 +252,25 @@ def score_anomalies(df_features: pd.DataFrame, models_dir: Path = MODELS_DIR) ->
         ae_errors = torch.mean((x_tensor - recon) ** 2, dim=1).numpy()
         
     th = ae_payload['threshold']
-    ae_scores = np.clip(ae_errors / (th * 1.5 + 1e-6), 0.0, 1.0)
+    error_mean = ae_payload.get('error_mean', th * 0.4)
+    
+    # Normal projects (error <= error_mean) map to [0.05, 0.20]
+    # Elevated error (error_mean to th) maps to [0.20, 0.55]
+    # Outlier reconstruction (> th) maps to [0.55, 1.00]
+    ae_scores = np.where(
+        ae_errors <= error_mean,
+        0.05 + np.clip((ae_errors / (error_mean + 1e-6)) * 0.15, 0.0, 0.15),
+        np.where(
+            ae_errors <= th,
+            0.20 + np.clip((ae_errors - error_mean) / (th - error_mean + 1e-6) * 0.35, 0.0, 0.35),
+            0.55 + np.clip((ae_errors - th) / (th * 0.75 + 1e-6) * 0.45, 0.0, 0.45)
+        )
+    )
     ae_flag = ae_errors > th
     
-    # 3. Ensemble
-    combined_score = 0.60 * iso_scores + 0.40 * ae_scores
-    is_anomalous = (combined_score > 0.65) | (iso_flag & ae_flag)
+    # 3. Calibrated Ensemble
+    combined_score = np.clip(0.60 * iso_scores + 0.40 * ae_scores, 0.0, 1.0)
+    is_anomalous = (combined_score > 0.60) | (iso_flag & ae_flag)
     
     method = np.where(
         iso_flag & ae_flag, "both",

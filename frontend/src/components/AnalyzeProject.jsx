@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { analyzeProject, fetchStatesAndDistricts, getRiskColor, formatCrore, formatLakh } from '../api/client';
+import { analyzeProject, verifyAsset, fetchStatesAndDistricts, getRiskColor, formatCrore, formatLakh } from '../api/client';
 
 const CATEGORIES = [
   'Road Infrastructure', 'Health', 'Education', 'Water Supply',
@@ -20,7 +20,9 @@ const initialForm = {
   progress_percentage: 83,
   work_description: 'Construction of local connectivity road and drain infrastructure',
   previous_contractor_projects: 1,
-  previous_contractor_overruns: 0
+  previous_contractor_overruns: 0,
+  mp_name: 'Dr. Ramesh Kumar',
+  target_demographic: 'general'
 };
 
 export default function AnalyzeProject() {
@@ -31,6 +33,38 @@ export default function AnalyzeProject() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Asset Photo Verification State
+  const [assetFile, setAssetFile] = useState(null);
+  const [verifyingAsset, setVerifyingAsset] = useState(false);
+  const [assetResult, setAssetResult] = useState(null);
+  const [assetError, setAssetError] = useState('');
+
+  const handleAssetVerify = async (e) => {
+    e.preventDefault();
+    if (!assetFile) {
+      setAssetError('Please select a site photograph first.');
+      return;
+    }
+    setAssetError('');
+    setVerifyingAsset(true);
+    setAssetResult(null);
+
+    try {
+      const fd = new FormData();
+      fd.append('file', assetFile);
+      fd.append('project_id', form.project_id);
+      fd.append('district', form.district);
+      fd.append('state', form.state);
+      fd.append('tolerance_km', '5.0');
+      const res = await verifyAsset(fd);
+      setAssetResult(res);
+    } catch (err) {
+      setAssetError(err.response?.data?.detail || err.message || 'Asset verification failed.');
+    } finally {
+      setVerifyingAsset(false);
+    }
+  };
 
   // 1. Fetch States & Districts
   useEffect(() => {
@@ -180,6 +214,18 @@ export default function AnalyzeProject() {
                 <label>Past Cost Overruns</label>
                 <input className="form-control" type="number" min="0" value={form.previous_contractor_overruns} onChange={e => handleChange('previous_contractor_overruns', e.target.value)} />
               </div>
+              <div className="form-group">
+                <label>MP Name (Policy Compliance)</label>
+                <input className="form-control" value={form.mp_name} onChange={e => handleChange('mp_name', e.target.value)} placeholder="e.g. Dr. Ramesh Kumar" />
+              </div>
+              <div className="form-group">
+                <label>Beneficiary Demographics (MoSPI)</label>
+                <select className="form-control" value={form.target_demographic} onChange={e => handleChange('target_demographic', e.target.value)}>
+                  <option value="general">General Public Works</option>
+                  <option value="SC">Scheduled Caste (SC) Beneficiaries</option>
+                  <option value="ST">Scheduled Tribe (ST) Beneficiaries</option>
+                </select>
+              </div>
             </div>
 
             {error && <div style={{ color: 'var(--risk-critical)', marginBottom: 12, fontSize: '0.85rem' }}>❌ {error}</div>}
@@ -264,7 +310,7 @@ export default function AnalyzeProject() {
               )}
 
               {/* MATHEMATICAL SCORE BRIEFING & DECOMPOSITION CARD */}
-              <div className="panel" style={{ border: '1px solid rgba(59, 130, 246, 0.3)', background: 'linear-gradient(180deg, rgba(26, 34, 53, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%)' }}>
+              <div className="panel" style={{ border: '1px solid var(--border-card)', background: 'var(--bg-card)' }}>
                 <div className="panel-header" style={{ marginBottom: 12 }}>
                   <div>
                     <h3 style={{ margin: 0, color: 'var(--accent-hover)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -402,6 +448,194 @@ export default function AnalyzeProject() {
                   📢 <strong>Escalation Protocol:</strong> {result.alert_escalation}
                 </div>
               </div>
+
+              {/* MoSPI MPLADS Policy Compliance Scorecard */}
+              {result.compliance_assessment && (
+                <div className="panel" style={{ border: `1px solid ${result.compliance_assessment.overall_status === 'COMPLIANT' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}` }}>
+                  <div className="panel-header" style={{ marginBottom: 12 }}>
+                    <div>
+                      <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        📜 MoSPI MPLADS Guidelines Compliance
+                      </h3>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Statutory Rules & Permissibility Verification
+                      </span>
+                    </div>
+                    <span className={`risk-badge ${result.compliance_assessment.overall_status === 'COMPLIANT' ? 'low' : result.compliance_assessment.overall_status === 'AT_RISK' ? 'medium' : 'critical'}`}>
+                      {result.compliance_assessment.overall_status} • {result.compliance_assessment.compliance_score}/100
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
+                    <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: 6 }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Rule A: Financial Ceiling</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: result.compliance_assessment.rule_breakdown?.financial_ceiling === 'PASS' ? '#22c55e' : '#ef4444', marginTop: 3 }}>
+                        {result.compliance_assessment.rule_breakdown?.financial_ceiling || 'PASS'}
+                      </div>
+                    </div>
+                    <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: 6 }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Rule B: SC Allocation (15%)</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: result.compliance_assessment.rule_breakdown?.sc_allocation === 'PASS' ? '#22c55e' : '#f59e0b', marginTop: 3 }}>
+                        {result.compliance_assessment.rule_breakdown?.sc_allocation || 'PASS'}
+                      </div>
+                    </div>
+                    <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: 6 }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Rule C: ST Allocation (7.5%)</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: result.compliance_assessment.rule_breakdown?.st_allocation === 'PASS' ? '#22c55e' : '#f59e0b', marginTop: 3 }}>
+                        {result.compliance_assessment.rule_breakdown?.st_allocation || 'PASS'}
+                      </div>
+                    </div>
+                    <div style={{ background: 'var(--bg-input)', padding: '8px 10px', borderRadius: 6 }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Rule D: Prohibited Works</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: result.compliance_assessment.rule_breakdown?.prohibited_works === 'PASS' ? '#22c55e' : '#ef4444', marginTop: 3 }}>
+                        {result.compliance_assessment.rule_breakdown?.prohibited_works || 'PASS'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {result.compliance_assessment.violations?.length > 0 && (
+                    <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: 8, padding: '10px 14px', marginTop: 8 }}>
+                      <div style={{ color: '#f87171', fontWeight: 700, fontSize: '0.82rem', marginBottom: 4 }}>
+                        ⚠️ Ineligible Work & Non-Compliance Findings:
+                      </div>
+                      {result.compliance_assessment.violations.map((v, i) => (
+                        <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                          • <strong>{v.rule_name}:</strong> {v.message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Genuine SHAP Explainability Breakdown */}
+              {result.shap_explanations?.top_features?.length > 0 && (
+                <div className="panel">
+                  <div className="panel-header" style={{ marginBottom: 10 }}>
+                    <div>
+                      <h3 style={{ margin: 0 }}>🔍 TreeExplainer SHAP Feature Attribution</h3>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        Mathematical feature attributions computed via tree gradient explainers
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Primary Contributors */}
+                  {result.shap_explanations.primary_contributors?.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#f87171', fontWeight: 700, marginBottom: 6 }}>
+                        🔺 Factors Increasing Risk:
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                        {result.shap_explanations.primary_contributors.map((item, i) => (
+                          <div key={i} style={{ background: 'var(--bg-input)', padding: '8px 12px', borderRadius: 6, borderLeft: '3px solid #ef4444' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
+                              <span>{item.display_name}</span>
+                              <span style={{ color: '#f87171' }}>+{item.impact_points} pts</span>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                              Observed Value: {item.raw_value} • SHAP contribution: +{item.contribution}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Protective Factors */}
+                  {result.shap_explanations.protective_factors?.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: '#4ade80', fontWeight: 700, marginBottom: 6 }}>
+                        🛡️ Protective Factors Reducing Risk:
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                        {result.shap_explanations.protective_factors.map((item, i) => (
+                          <div key={i} style={{ background: 'var(--bg-input)', padding: '8px 12px', borderRadius: 6, borderLeft: '3px solid #22c55e' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600 }}>
+                              <span>{item.display_name}</span>
+                              <span style={{ color: '#4ade80' }}>-{item.impact_points} pts</span>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                              Observed Value: {item.raw_value} • SHAP contribution: {item.contribution}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Physical Asset Geo-Tag & Photo Verification Tool */}
+              <div className="panel" style={{ border: '1px solid rgba(147, 197, 253, 0.25)' }}>
+                <div className="panel-header" style={{ marginBottom: 10 }}>
+                  <div>
+                    <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      📸 Physical Asset Geo-Tag & EXIF Verification
+                    </h3>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Upload site photograph to extract camera GPS coordinates & verify physical ground execution
+                    </span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAssetVerify} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setAssetFile(e.target.files?.[0] || null)}
+                    style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}
+                  />
+                  <button className="btn btn-outline btn-sm" type="submit" disabled={verifyingAsset || !assetFile}>
+                    {verifyingAsset ? 'Extracting EXIF GPS...' : '📍 Verify Asset Geo-Tag'}
+                  </button>
+                </form>
+
+                {assetError && <div style={{ color: 'var(--risk-critical)', fontSize: '0.8rem', marginBottom: 8 }}>⚠️ {assetError}</div>}
+
+                {assetResult && (
+                  <div style={{
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    background: assetResult.verified ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    border: `1px solid ${assetResult.verified ? '#22c55e' : '#ef4444'}`
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontWeight: 700, color: assetResult.verified ? '#4ade80' : '#f87171', fontSize: '0.9rem' }}>
+                        {assetResult.status === 'VERIFIED' ? '✅ Asset Physically Verified' : assetResult.status === 'DISCREPANCY' ? '🚨 Physical Discrepancy Flagged' : '⚠️ No GPS EXIF Data'}
+                      </span>
+                      {assetResult.distance_km != null && (
+                        <span className="risk-badge" style={{ fontSize: '0.74rem' }}>
+                          Distance: {assetResult.distance_km} km (Tolerance: {assetResult.tolerance_km} km)
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                      {assetResult.message}
+                    </div>
+                    {assetResult.photo_location && (
+                      <div style={{ display: 'flex', gap: 14, marginTop: 8, fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                        <span>📍 Photo: ({assetResult.photo_location.latitude}, {assetResult.photo_location.longitude})</span>
+                        <span>🎯 Site: ({assetResult.site_location.latitude}, {assetResult.site_location.longitude})</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Data Provenance Badges */}
+              {result.data_provenance && (
+                <div style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontWeight: 600, textTransform: 'uppercase', marginBottom: 6 }}>Data Provenance & Model Lineage:</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span className="risk-badge low">Anomaly: {result.data_provenance.anomaly_score}</span>
+                    <span className="risk-badge low">Fraud: {result.data_provenance.fraud_probability}</span>
+                    <span className="risk-badge low">Efficiency: {result.data_provenance.efficiency_score}</span>
+                    <span className="risk-badge medium">Compliance: {result.data_provenance.compliance}</span>
+                    <span className="risk-badge medium">Spatial: {result.data_provenance.geo_duplicate}</span>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="panel" style={{ textAlign: 'center', padding: 60 }}>

@@ -129,10 +129,17 @@ def get_me(current_user: dict = Depends(get_current_user)):
 def demo_users():
     """
     Returns demo login credentials for all four MPLADS roles.
-    **Remove this endpoint before production deployment.**
+    Disabled when in production or when DEMO_MODE is false.
     """
+    demo_mode_active = os.getenv("DEMO_MODE", "true").lower() in ("true", "1", "yes")
+    env = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower()
+    if env == "production" or not demo_mode_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo credentials endpoint disabled in production and strict authentication mode."
+        )
     return {
-        "note": "These are demo credentials for the SIH 2026 hackathon. Remove in production.",
+        "note": "These are demo credentials for SIH 2026 hackathon evaluation.",
         "password_for_all": "demo123",
         "users": auth_service.list_demo_users(),
     }

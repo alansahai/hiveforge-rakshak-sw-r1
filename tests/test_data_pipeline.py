@@ -46,7 +46,7 @@ class TestDataPipeline(unittest.TestCase):
         self.assertGreater(d, 100)
         self.assertLess(d, 160)
 
-        # Single project check with border trigger
+        # 1. Single project check without master match -> Must NOT fabricate a duplicate
         p1 = {
             "project_id": "TEST-BORDER-01",
             "district": "Bengaluru Urban",
@@ -55,9 +55,24 @@ class TestDataPipeline(unittest.TestCase):
             "amount_sanctioned": 1000000.0,
             "work_description": "Construction of inter-district border link road"
         }
-        res = check_single_project_geo_duplicate(p1)
-        self.assertTrue(res["geo_duplicate_detected"])
-        self.assertEqual(res["geo_duplicate_type"], "cross_district")
+        res = check_single_project_geo_duplicate(p1, master_df=None)
+        self.assertFalse(res["geo_duplicate_detected"])
+        self.assertEqual(res["geo_duplicate_type"], "none")
+        self.assertIn("No evidence", res["explanation"])
+
+        # 2. Genuine evidence-based duplicate match when existing in master registry
+        master_sample = pd.DataFrame([{
+            "project_id": "EXISTING-ROAD-01",
+            "district": "Bengaluru Urban",
+            "state": "Karnataka",
+            "category": "Road Infrastructure",
+            "amount_sanctioned": 1020000.0,
+            "work_description": "Road construction work"
+        }])
+        res_match = check_single_project_geo_duplicate(p1, master_df=master_sample)
+        self.assertTrue(res_match["geo_duplicate_detected"])
+        self.assertEqual(res_match["geo_duplicate_type"], "same_district")
+        self.assertEqual(res_match["matched_project_id"], "EXISTING-ROAD-01")
 
 if __name__ == '__main__':
     unittest.main()

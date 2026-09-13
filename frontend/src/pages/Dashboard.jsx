@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { fetchDashboardSummary, formatCrore } from '../api/client';
 import ProjectDetailModal from '../components/ProjectDetailModal';
+import IndiaStateMap from '../components/IndiaStateMap';
 
 const BAR_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6'];
 
@@ -42,13 +43,22 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="page-header">
-        <h2>National Overview — MPLADS AI Monitoring</h2>
-        <p>Real-time anomaly detection across {summary.states_monitored} states • {summary.total_projects.toLocaleString()} projects monitored</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2>National Overview — MPLADS AI Monitoring</h2>
+          <p>Real-time anomaly detection across {summary.states_monitored} states • {summary.total_projects.toLocaleString()} projects monitored</p>
+        </div>
+        <button
+          className="btn btn-primary"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem' }}
+          onClick={() => navigate('/analytics-studio')}
+        >
+          <span>📈</span> Custom Chart Builder (Studio)
+        </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
+      <div className="stats-grid">
         <div className="stat-card" onClick={() => navigate('/ministry')} style={{cursor:'pointer'}}>
           <div className="stat-label">Total Projects</div>
           <div className="stat-value">{summary.total_projects.toLocaleString()}</div>
@@ -97,8 +107,8 @@ export default function Dashboard() {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: '#1a2235', border: '1px solid rgba(99,130,190,0.15)', borderRadius: '6px' }}
-                itemStyle={{ color: '#e2e8f0' }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                itemStyle={{ color: 'var(--text-primary)' }}
                 formatter={(val) => [val.toLocaleString() + ' projects', 'Count']}
               />
               <Legend
@@ -128,8 +138,8 @@ export default function Dashboard() {
               />
               <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} />
               <Tooltip
-                contentStyle={{ background: '#1a2235', border: '1px solid rgba(99,130,190,0.15)', borderRadius: '6px' }}
-                itemStyle={{ color: '#e2e8f0' }}
+                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                itemStyle={{ color: 'var(--text-primary)' }}
               />
               <Bar dataKey="projects" radius={[4, 4, 0, 0]}>
                 {categoryData.map((_, i) => (
@@ -141,6 +151,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Pan-India 37 States & UTs Cartographic Map */}
+      <IndiaStateMap />
+
       {/* Flagged Projects */}
       {summary.top_flagged_projects && summary.top_flagged_projects.length > 0 && (
         <div className="panel">
@@ -151,50 +164,52 @@ export default function Dashboard() {
             </div>
             <button className="btn btn-outline btn-sm" onClick={() => navigate('/alerts')}>View All Alerts</button>
           </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Project ID</th>
-                <th>State</th>
-                <th>District</th>
-                <th>Risk Score</th>
-                <th>Diagnostic Reason</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.top_flagged_projects.map((p, i) => (
-                <tr
-                  key={i}
-                  onClick={() => setSelectedProject(p)}
-                  style={{ cursor: 'pointer' }}
-                  title="Click to view full project breakdown"
-                >
-                  <td style={{fontWeight:600, color:'var(--accent-primary)'}}>{p.project_id}</td>
-                  <td>{p.state}</td>
-                  <td>{p.district}</td>
-                  <td>
-                    <span className={`risk-badge ${p.risk_score >= 80 ? 'critical' : 'high'}`}>
-                      {p.risk_score?.toFixed(0)}/100
-                    </span>
-                  </td>
-                  <td style={{maxWidth:300, whiteSpace:'normal'}}>{p.reason}</td>
-                  <td>
-                    <button
-                      className="btn btn-outline btn-sm"
-                      style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedProject(p);
-                      }}
-                    >
-                      Inspect 🔍
-                    </button>
-                  </td>
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Project ID</th>
+                  <th>State</th>
+                  <th>District</th>
+                  <th>Risk Score</th>
+                  <th>Diagnostic Reason</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {summary.top_flagged_projects.map((p, i) => (
+                  <tr
+                    key={i}
+                    onClick={() => setSelectedProject(p)}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to view full project breakdown"
+                  >
+                    <td style={{fontWeight:600, color:'var(--accent-primary)'}}>{p.project_id}</td>
+                    <td>{p.state}</td>
+                    <td>{p.district}</td>
+                    <td>
+                      <span className={`risk-badge ${p.risk_score >= 80 ? 'critical' : 'high'}`}>
+                        {p.risk_score?.toFixed(0)}/100
+                      </span>
+                    </td>
+                    <td style={{maxWidth:300, whiteSpace:'normal'}}>{p.reason}</td>
+                    <td>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProject(p);
+                        }}
+                      >
+                        Inspect 🔍
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

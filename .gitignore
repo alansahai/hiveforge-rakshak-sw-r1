@@ -21,6 +21,13 @@ data/processed/
 data/features/
 data/results/*.csv
 data/results/*.parquet
+# Runtime alert state & audit logs
+data/results/alert_state.json
+data/results/alert_state.json.tmp
+data/results/*.jsonl
+data/results/audit_trail.jsonl
+alert_state.json
+*.jsonl
 # Keep result images and compressed parquet dataset for production deployment
 !data/results/*.png
 !data/results/risk_reports.parquet

@@ -149,12 +149,21 @@ function AlertDetailDrawer({ alert, onClose, onAction, onViewProject }) {
   const canInvestigate = ['open', 'acknowledged'].includes(alert.status);
   const canResolve = ['acknowledged', 'investigating'].includes(alert.status);
 
+  const [emailStatus, setEmailStatus] = useState(null);
+
   const handleTestEmail = async () => {
     try {
       const result = await sendTestEmail(alert.project_id, role || 'district');
-      alert(`📧 Email ${result.mode === 'demo' ? 'logged to console' : 'sent'}: ${result.message}`);
+      const msg = `📧 Email ${result.mode === 'demo' ? 'logged to console' : 'sent'}: ${result.message}`;
+      setEmailStatus({ type: 'success', text: msg });
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert(msg);
+      }
     } catch {
-      alert('Email test failed.');
+      setEmailStatus({ type: 'error', text: 'Email test failed.' });
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert('Email test failed.');
+      }
     }
   };
 
@@ -172,6 +181,20 @@ function AlertDetailDrawer({ alert, onClose, onAction, onViewProject }) {
         </div>
 
         <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+          {emailStatus && (
+            <div style={{
+              padding: '10px 14px',
+              borderRadius: 6,
+              marginBottom: 14,
+              fontSize: '0.82rem',
+              background: emailStatus.type === 'success' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              border: `1px solid ${emailStatus.type === 'success' ? 'var(--risk-low)' : 'var(--risk-critical)'}`,
+              color: emailStatus.type === 'success' ? '#86efac' : '#fca5a5'
+            }}>
+              {emailStatus.text}
+            </div>
+          )}
+
           {/* Risk score badge */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             <span className={`risk-badge ${alert.severity || 'high'}`}>

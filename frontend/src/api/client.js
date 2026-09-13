@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
+const rawApiBase = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:8000' : '');
+const API_BASE = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
 const api = axios.create({ baseURL: API_BASE, timeout: 30000 });
 
 // ── Auth token interceptor ──────────────────────────────────────────────────
@@ -174,6 +175,58 @@ export const fetchContractorNetwork = async (params = {}) => {
   }
 };
 
+export const fetchContractorDetail = async (contractorName, state = null) => {
+  try {
+    const params = { name: contractorName };
+    if (state) params.state = state;
+    const res = await api.get('/api/dashboard/contractor-detail', { params });
+    return res.data;
+  } catch (err) {
+    console.error('Contractor detail error:', err);
+    return null;
+  }
+};
+
+export const fetchCustomChartData = async (config) => {
+  try {
+    const res = await api.post('/api/dashboard/custom-chart', config);
+    return res.data;
+  } catch (err) {
+    console.error('Custom chart error:', err);
+    return { data: [], summary: {} };
+  }
+};
+
+export const fetchStatesSummary = async () => {
+  try {
+    const res = await api.get('/api/dashboard/states-summary');
+    return res.data?.states || [];
+  } catch (err) {
+    console.error('States summary error:', err);
+    return [];
+  }
+};
+
+export const fetchMPsSummary = async () => {
+  try {
+    const res = await api.get('/api/dashboard/mps-summary');
+    return res.data?.mps || [];
+  } catch (err) {
+    console.error('MPs summary error:', err);
+    return [];
+  }
+};
+
+export const fetchContractorsSummary = async () => {
+  try {
+    const res = await api.get('/api/dashboard/contractors-summary');
+    return res.data?.contractors || [];
+  } catch (err) {
+    console.error('Contractors summary error:', err);
+    return [];
+  }
+};
+
 export const fetchMinistryInsights = async () => {
   try {
     const res = await api.get('/api/dashboard/ministry-insights');
@@ -256,6 +309,13 @@ export const sendTestEmail = async (projectId, recipientRole) => {
 
 export const analyzeProject = async (projectData) => {
   const res = await api.post('/api/analyze', projectData);
+  return res.data;
+};
+
+export const verifyAsset = async (formData) => {
+  const res = await api.post('/api/verify-asset', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return res.data;
 };
 

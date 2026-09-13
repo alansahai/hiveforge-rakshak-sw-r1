@@ -1,14 +1,93 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { fetchDistrictDashboard, fetchStatesAndDistricts, fetchProjects, formatCrore, formatLakh } from '../api/client';
 import ProjectDetailModal from './ProjectDetailModal';
+import RealTimeDistrictMap from './RealTimeDistrictMap';
+
+// Known spelling transliterations and district aliases
+const DISTRICT_ALIASES = {
+  'thoothukudi': 'thoothukkudi',
+  'tuticorin': 'thoothukkudi',
+  'thoothukkudi': 'thoothukkudi',
+  'tiruvallur': 'thiruvallur',
+  'thiruvallur': 'thiruvallur',
+  'kanyakumari': 'kanniyakumari',
+  'kanniyakumari': 'kanniyakumari',
+  'tirupur': 'tiruppur',
+  'tiruppur': 'tiruppur',
+  'villupuram': 'viluppuram',
+  'viluppuram': 'viluppuram',
+  'tirupathur': 'tirupathur',
+  'tirupattur': 'tirupathur',
+  'tiruvarur': 'thiruvarur',
+  'thiruvarur': 'thiruvarur',
+  'kanchipuram': 'kancheepuram',
+  'kancheepuram': 'kancheepuram',
+  'tiruchirappalli': 'tiruchirappalli',
+  'trichy': 'tiruchirappalli',
+  'dharashiv': 'osmanabad',
+  'osmanabad': 'osmanabad',
+  'chhatrapati sambhajinagar': 'aurangabad',
+  'aurangabad': 'aurangabad',
+  'prayagraj': 'allahabad',
+  'allahabad': 'allahabad',
+  'ayodhya': 'faizabad',
+  'faizabad': 'faizabad',
+  'gurugram': 'gurgaon',
+  'gurgaon': 'gurgaon',
+  'mysuru': 'mysore',
+  'mysore': 'mysore',
+  'belagavi': 'belgaum',
+  'belgaum': 'belgaum',
+  'kalaburagi': 'gulbarga',
+  'gulbarga': 'kalaburagi'
+};
+
+const normalizeDistrictQuery = (str) => {
+  if (!str) return '';
+  return str.toLowerCase()
+    .replace(/th/g, 't')
+    .replace(/kk/g, 'k')
+    .replace(/pp/g, 'p')
+    .replace(/ll/g, 'l')
+    .replace(/nn/g, 'n')
+    .replace(/tt/g, 't')
+    .replace(/rr/g, 'r')
+    .replace(/oo/g, 'u')
+    .replace(/ee/g, 'i')
+    .replace(/[^a-z0-9]/g, '');
+};
+
+const matchesDistrict = (districtName, query) => {
+  if (!districtName || !query) return false;
+  const dNorm = districtName.toLowerCase().trim();
+  const qNorm = query.toLowerCase().trim();
+  if (dNorm.includes(qNorm)) return true;
+
+  const aliasD = DISTRICT_ALIASES[dNorm];
+  if (aliasD && (aliasD.includes(qNorm) || qNorm.includes(aliasD))) return true;
+
+  const aliasQ = DISTRICT_ALIASES[qNorm];
+  if (aliasQ && (dNorm.includes(aliasQ) || aliasQ.includes(dNorm))) return true;
+
+  const nD = normalizeDistrictQuery(dNorm);
+  const nQ = normalizeDistrictQuery(qNorm);
+  if (nD && nQ && (nD.includes(nQ) || nQ.includes(nD))) return true;
+
+  return false;
+};
 
 export default function DistrictDashboard() {
+  const [searchParams] = useSearchParams();
+  const stateFromUrl = searchParams.get('state');
+  const districtFromUrl = searchParams.get('district');
+
   const [statesMap, setStatesMap] = useState({});
   const [statesList, setStatesList] = useState([]);
-  const [selectedState, setSelectedState] = useState('Karnataka');
+  const [selectedState, setSelectedState] = useState(stateFromUrl || 'Karnataka');
   const [districtsList, setDistrictsList] = useState([]);
-  const [selectedDistrict, setSelectedDistrict] = useState('Dharwad');
+  const [selectedDistrict, setSelectedDistrict] = useState(districtFromUrl || 'Dharwad');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [allDistrictProjects, setAllDistrictProjects] = useState([]);
@@ -24,16 +103,38 @@ export default function DistrictDashboard() {
       const states = Object.keys(map).sort();
       setStatesList(states);
 
-      const defaultState = map['Karnataka'] ? 'Karnataka' : states[0] || '';
+      let matchedState = null;
+      if (stateFromUrl) {
+        matchedState = states.find(s => s.toLowerCase() === stateFromUrl.toLowerCase().trim());
+      }
+      const defaultState = matchedState || (map['Karnataka'] ? 'Karnataka' : states[0] || '');
       setSelectedState(defaultState);
 
       const dists = map[defaultState] || [];
       setDistrictsList(dists);
       if (dists.length > 0) {
-        setSelectedDistrict(dists.includes('Dharwad') ? 'Dharwad' : dists[0]);
+        let matchedDist = null;
+        if (districtFromUrl) {
+          const dTarget = districtFromUrl.toLowerCase().trim();
+          // 1. Exact match case-insensitive
+          matchedDist = dists.find(d => d.toLowerCase() === dTarget);
+          // 2. Alias match
+          if (!matchedDist) {
+            const alias = DISTRICT_ALIASES[dTarget];
+            if (alias) {
+              matchedDist = dists.find(d => d.toLowerCase() === alias.toLowerCase() || d.toLowerCase().includes(alias.toLowerCase()));
+            }
+          }
+          // 3. Phonetic/consonant fuzzy match
+          if (!matchedDist) {
+            matchedDist = dists.find(d => matchesDistrict(d, dTarget));
+          }
+        }
+        const defaultDist = matchedDist || (dists.includes('Dharwad') ? 'Dharwad' : dists[0]);
+        setSelectedDistrict(defaultDist);
       }
     });
-  }, []);
+  }, [stateFromUrl, districtFromUrl]);
 
   // 2. When State selection changes, update the cascading District dropdown
   const handleStateChange = (newState) => {
@@ -121,7 +222,7 @@ export default function DistrictDashboard() {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+          <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-label">Total Projects</div>
               <div className="stat-value">{data.total_projects}</div>
@@ -141,6 +242,18 @@ export default function DistrictDashboard() {
             </div>
           </div>
 
+          {/* Real-Time Geospatial District Project Map */}
+          <div style={{ marginBottom: 20 }}>
+            <RealTimeDistrictMap
+              districtName={selectedDistrict}
+              stateName={selectedState}
+              districtCoordinates={data.coordinates}
+              projects={allDistrictProjects.length > 0 ? allDistrictProjects : (data.projects || [])}
+              height="460px"
+              onSelectProject={(p) => setSelectedProject(p)}
+            />
+          </div>
+
           <div className="grid-2">
             {/* Budget Burndown Chart */}
             <div className="panel">
@@ -154,7 +267,7 @@ export default function DistrictDashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
                   <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} />
                   <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickFormatter={v => `₹${(v / 10000000).toFixed(0)}Cr`} />
-                  <Tooltip contentStyle={{ background: '#1a2235', border: '1px solid rgba(99,130,190,0.15)', borderRadius: '6px' }} itemStyle={{ color: '#e2e8f0' }} formatter={v => formatCrore(v)} />
+                  <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={v => formatCrore(v)} />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>

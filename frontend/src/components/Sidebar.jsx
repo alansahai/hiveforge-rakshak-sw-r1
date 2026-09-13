@@ -15,6 +15,18 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const user = getCurrentUser();
   const role = getCurrentRole();
+  const [theme, setTheme] = React.useState(() => {
+    return localStorage.getItem('mplads_theme') || 'dark';
+  });
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('mplads_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   const links = [
     { to: '/overview', icon: '📊', label: 'Overview' },
@@ -22,6 +34,7 @@ export default function Sidebar() {
     { to: '/state', icon: '🚩', label: 'State Authority' },
     { to: '/district', icon: '📍', label: 'District Authority' },
     { to: '/ministry', icon: '🌐', label: 'Ministry (MoSPI)' },
+    { to: '/analytics-studio', icon: '📈', label: 'Analytics Studio' },
     { to: '/analyze', icon: '🔬', label: 'Analyze Project' },
     { to: '/alerts', icon: '🚨', label: 'Alerts & Flags' },
   ];
@@ -76,7 +89,32 @@ export default function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="system-status">
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle-btn"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            width: '100%',
+            padding: '8px 12px',
+            marginBottom: 10,
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border-subtle)',
+            background: 'var(--bg-input)',
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease'
+          }}
+          title="Toggle Light / Dark Theme"
+        >
+          {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        </button>
+
+        <div className="system-status" style={{ marginBottom: 8 }}>
           <span className="status-dot" />
           System Online — 98K Projects Monitored
         </div>

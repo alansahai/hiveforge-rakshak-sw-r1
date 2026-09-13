@@ -1,5 +1,6 @@
 import sys
 import logging
+import pickle
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
@@ -19,6 +20,8 @@ from src.config import (
 from src.models.ensemble import MPLADSEnsembleScorer
 from src.pipeline.feature_engineer import engineer_features
 from src.pipeline.geo_utils import check_single_project_geo_duplicate
+from src.pipeline.compliance_rules import compliance_engine
+from src.explainability.shap_explainer import compute_shap_explanations
 from src.explainability.rule_extractor import extract_human_rules
 from src.backend.services.cache import cache_service
 
@@ -48,6 +51,22 @@ class RiskScorerService:
         self.models_dir = models_dir
         self.ensemble = MPLADSEnsembleScorer(models_dir)
         self._master_df = None
+        self._fraud_model = None
+        self._fraud_features = None
+
+    def _get_fraud_model(self):
+        """Lazily load trained XGBoost model and feature names for genuine SHAP computation."""
+        if self._fraud_model is None:
+            model_path = self.models_dir / "fraud_classifier.pkl"
+            if model_path.exists():
+                try:
+                    with open(model_path, "rb") as f:
+                        payload = pickle.load(f)
+                    self._fraud_model = payload.get("model")
+                    self._fraud_features = payload.get("features", [])
+                except Exception as e:
+                    logger.warning(f"Could not load fraud model for SHAP: {e}")
+        return self._fraud_model, self._fraud_features
 
     def get_master_df(self) -> Optional[pd.DataFrame]:
         """Lazily load risk reports dataset for geo and historical duplicate checks."""
@@ -95,14 +114,17 @@ class RiskScorerService:
         anomaly_score = float(predictions['anomaly_score'].iloc[0])
         fraud_prob = float(predictions['fraud_probability'].iloc[0])
         eff_score = float(predictions['efficiency_score'].iloc[0])
-        delay_days = int(predictions['days_behind_schedule'].iloc[0])
+        if 'days_behind_schedule' in project_dict and project_dict['days_behind_schedule'] is not None:
+            delay_days = max(0, int(project_dict['days_behind_schedule']))
+        else:
+            delay_days = max(0, int(predictions['days_behind_schedule'].iloc[0]))
         
         composite_score = compute_risk_score(anomaly_score, fraud_prob, eff_score)
         risk_cat = get_risk_category(composite_score)
         
         # Geo-Adjacency and duplicate work check
         geo_dup_info = check_single_project_geo_duplicate(project_dict, master_df=self.get_master_df())
-        is_geo_dup = geo_dup_info.get("geo_duplicate_detected", False)
+        is_geo_dup = bool(geo_dup_info.get("geo_duplicate_detected", False))
         dup_type = geo_dup_info.get("geo_duplicate_type", "none")
         dist_km = geo_dup_info.get("distance_to_duplicate_km")
 
@@ -142,6 +164,77 @@ class RiskScorerService:
         else:
             eff_explanation = "Project progress matches or exceeds anticipated timeline."
             
+        # MPLADS Policy Compliance Evaluation
+        mp_portfolio = None
+        mp_name = project_dict.get('mp_name')
+        if mp_name and str(mp_name).strip() not in ['Honble MP', 'Unknown MP', '']:
+            master_df = self.get_master_df()
+            if master_df is not None and 'mp_name' in master_df.columns:
+                mp_portfolio = master_df[master_df['mp_name'].astype(str).str.lower() == str(mp_name).strip().lower()]
+        
+        compliance_summary = compliance_engine.evaluate_project_compliance(project_dict, mp_portfolio_df=mp_portfolio)
+
+        # Genuine SHAP Explainability computation
+        fraud_model, fraud_features = self._get_fraud_model()
+        shap_results = []
+        if fraud_model is not None and fraud_features:
+            try:
+                # Ensure all fraud features exist in df_feats
+                for ff in fraud_features:
+                    if ff not in df_feats.columns:
+                        df_feats[ff] = 0.0
+                shap_results = compute_shap_explanations(
+                    fraud_model,
+                    df_feats[fraud_features],
+                    feature_names=fraud_features,
+                    top_k=6,
+                    model_key="fraud_classifier"
+                )
+            except Exception as e:
+                logger.warning(f"SHAP attribution computation failed: {e}")
+
+        shap_attribution = shap_results[0] if shap_results else {
+            "top_features": [],
+            "primary_contributors": [],
+            "protective_factors": []
+        }
+
+        # Protective Factors Identification
+        protective_factors = []
+        prog_val = float(project_dict.get('progress_percentage', df_feats.get('progress_percentage', [80])[0]))
+        contractor_past_overruns = int(project_dict.get('previous_contractor_overruns', 0))
+
+        if delay_days <= 0:
+            protective_factors.append({
+                "factor": "Milestone Discipline",
+                "impact": "Operating on or ahead of planned milestone schedule",
+                "significance": "high"
+            })
+        if prog_val >= 85.0:
+            protective_factors.append({
+                "factor": "Physical Execution Velocity",
+                "impact": f"{prog_val:.0f}% work verified as physically completed",
+                "significance": "high"
+            })
+        if cost_overrun_pct <= 0:
+            protective_factors.append({
+                "factor": "Budget Containment",
+                "impact": "Disbursements strictly contained within sanctioned envelope",
+                "significance": "medium"
+            })
+        if contractor_past_overruns == 0:
+            protective_factors.append({
+                "factor": "Contractor Track Record",
+                "impact": "Clean delivery history with zero past cost overruns",
+                "significance": "medium"
+            })
+        for pf in shap_attribution.get("protective_factors", [])[:3]:
+            protective_factors.append({
+                "factor": pf["display_name"],
+                "impact": f"Model attribution reduces fraud risk by {pf['impact_points']:.1f} pts",
+                "significance": "model_shap"
+            })
+
         # Actionable recommendations
         recommendations = []
         if is_geo_dup:
@@ -149,6 +242,10 @@ class RiskScorerService:
                 recommendations.append(f"Cross-Boundary Duplicate Alert: Conduct joint physical inspection with adjacent district ({dist_km:.1f} km away)")
             else:
                 recommendations.append("Same-District Duplicate Alert: Verify work against district master registry to prevent dual-billing")
+
+        if compliance_summary.get("overall_status") == "NON_COMPLIANT":
+            for v in compliance_summary.get("violations", []):
+                recommendations.append(f"Compliance Violation [{v.get('rule_name')}]: {v.get('message')}")
 
         if composite_score >= RISK_HIGH_MAX:
             recommendations.append("Immediate physical audit and measurement book verification recommended")
@@ -163,9 +260,9 @@ class RiskScorerService:
             recommendations.append("Track next tranche disbursement against physical milestones")
             
         # Alert escalation
-        if is_geo_dup or composite_score >= RISK_HIGH_MAX:
+        if is_geo_dup or composite_score >= RISK_HIGH_MAX or compliance_summary.get("overall_status") == "NON_COMPLIANT":
             alert_escalation = "Send immediate escalation alert to MP, District Authority, and MoSPI"
-        elif composite_score >= RISK_MEDIUM_MAX:
+        elif composite_score >= RISK_MEDIUM_MAX or compliance_summary.get("overall_status") == "AT_RISK":
             alert_escalation = "Flag in monthly district audit report"
         else:
             alert_escalation = "No escalation required"
@@ -189,6 +286,13 @@ class RiskScorerService:
                     "impact": "Identical project found in district records",
                     "severity": "critical"
                 })
+        if compliance_summary.get("overall_status") == "NON_COMPLIANT":
+            for v in compliance_summary.get("violations", []):
+                drivers.append({
+                    "factor": f"Policy Non-Compliance ({v.get('rule_name')})",
+                    "impact": v.get("message", "Policy violation"),
+                    "severity": "critical"
+                })
         if cost_overrun_pct > 10.0:
             drivers.append({"factor": "Cost Overrun", "impact": f"+{cost_overrun_pct:.1f}% spend variation", "severity": "high"})
         if delay_days > 30:
@@ -199,6 +303,12 @@ class RiskScorerService:
             drivers.append({"factor": "Contractor Concurrency", "impact": f"Contractor handling {project_dict.get('previous_contractor_projects', 1)} projects", "severity": "medium"})
         if int(project_dict.get('previous_contractor_overruns', 0)) > 0:
             drivers.append({"factor": "Contractor History", "impact": f"{project_dict.get('previous_contractor_overruns')} past overruns recorded", "severity": "high"})
+        for pc in shap_attribution.get("primary_contributors", [])[:3]:
+            drivers.append({
+                "factor": pc["display_name"],
+                "impact": f"SHAP attribution: +{pc['impact_points']:.1f} pts risk",
+                "severity": "high" if pc["impact_points"] > 15 else "medium"
+            })
         if not drivers:
             drivers.append({"factor": "Financial & Milestone Adherence", "impact": "Expenditure and progress within anticipated variance bounds", "severity": "safe"})
 
@@ -237,6 +347,7 @@ class RiskScorerService:
             ],
             "total_points": composite_score,
             "key_drivers": drivers,
+            "protective_factors": protective_factors,
             "plain_english_summary": (
                 f"This project scored {composite_score}/100 ({risk_cat.upper()} RISK). "
                 f"The statistical anomaly model contributed {anomaly_pts} pts (40% weight), "
@@ -262,6 +373,16 @@ class RiskScorerService:
                 "explanation": eff_explanation
             },
             "score_breakdown": score_breakdown,
+            "compliance_assessment": compliance_summary,
+            "shap_explanations": shap_attribution,
+            "data_provenance": {
+                "anomaly_score": "MODEL_PREDICTION (Isolation Forest + Autoencoder)",
+                "fraud_probability": "MODEL_PREDICTION (XGBoost Classifier)",
+                "efficiency_score": "MODEL_PREDICTION (Gradient Boosting Regressor)",
+                "compliance": "RULE_BASED_DETECTION (MoSPI MPLADS Guidelines Policy Engine)",
+                "geo_duplicate": "DERIVED_ANALYTICS (Haversine Spatial Proximity & District Registry)",
+                "shap_attribution": "MODEL_EXPLAINABILITY (TreeExplainer Attribution)"
+            },
             "recommendations": recommendations,
             "alert_escalation": alert_escalation,
             "computed_at": datetime.now(timezone.utc).isoformat(),

@@ -54,7 +54,7 @@ export default function MPDashboard() {
     const stateToUse = mpObj?.state || selectedState || 'Karnataka';
 
     setLoading(true);
-    fetchMPDashboard(stateToUse, selectedMPName, 1, 100).then((data) => {
+    fetchMPDashboard(stateToUse, selectedMPName, 1, 1500).then((data) => {
       setMpData(data);
       setLoading(false);
     });
@@ -64,7 +64,8 @@ export default function MPDashboard() {
 
   // Filter projects by risk category
   const filteredProjects = projects.filter((p) => {
-    const pRiskCat = (p.risk_category || (p.risk_score >= 80 ? 'critical' : p.risk_score >= 60 ? 'high' : p.risk_score >= 40 ? 'medium' : 'low')).toLowerCase();
+    const pScore = p.risk_score || 0;
+    const pRiskCat = (p.risk_category || (pScore >= 80 ? 'critical' : pScore >= 60 ? 'high' : pScore >= 40 ? 'medium' : 'low')).toLowerCase();
     const matchesCategory = categoryFilter === 'all' || pRiskCat === categoryFilter;
     const matchesSearch =
       !searchTerm ||
@@ -75,14 +76,15 @@ export default function MPDashboard() {
     return matchesCategory && matchesSearch;
   });
 
-  // Calculate counts for risk filter pills
-  const riskCounts = projects.reduce(
+  // Calculate counts for risk filter pills from complete backend portfolio summary
+  const riskCounts = mpData?.risk_breakdown || projects.reduce(
     (acc, p) => {
-      const cat = (p.risk_category || (p.risk_score >= 80 ? 'critical' : p.risk_score >= 60 ? 'high' : p.risk_score >= 40 ? 'medium' : 'low')).toLowerCase();
+      const pScore = p.risk_score || 0;
+      const cat = (p.risk_category || (pScore >= 80 ? 'critical' : pScore >= 60 ? 'high' : pScore >= 40 ? 'medium' : 'low')).toLowerCase();
       acc[cat] = (acc[cat] || 0) + 1;
       return acc;
     },
-    { all: projects.length, low: 0, medium: 0, high: 0, critical: 0 }
+    { all: mpData?.total_projects || projects.length, low: 0, medium: 0, high: 0, critical: 0 }
   );
 
   return (
@@ -143,7 +145,7 @@ export default function MPDashboard() {
       ) : (
         <>
           {/* KPI Metrics */}
-          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginTop: 16 }}>
+          <div className="stats-grid" style={{ marginTop: 16 }}>
             <div className="stat-card">
               <div className="stat-label">Total Projects</div>
               <div className="stat-value">{mpData.total_projects}</div>
