@@ -5,6 +5,17 @@ import { fetchStateDashboard, fetchProjects, fetchStatesAndDistricts, formatCror
 import ProjectDetailModal from './ProjectDetailModal';
 import ContractorNetworkGraph from './ContractorNetworkGraph';
 import RealTimeDistrictMap from './RealTimeDistrictMap';
+import {
+  IconState,
+  IconDistrict,
+  IconInspect,
+  IconSearch,
+  IconFilter,
+  IconShieldCheck,
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconAlertOctagon
+} from './common/GovIcons';
 
 // Known spelling transliterations and district aliases
 const DISTRICT_ALIASES = {
@@ -154,16 +165,23 @@ export default function StateDashboard() {
   return (
     <div>
       <div className="page-header">
-        <h2>🚩 State Nodal Authority Dashboard</h2>
-        <p>State-wide aggregation, district risk distribution, compliance scorecard, and granular project drilldown</p>
+        <h2>
+          <IconState size={24} color="var(--gov-navy-800)" />
+          <span>State Nodal Authority Oversight Dashboard</span>
+        </h2>
+        <p>
+          State-wide expenditure aggregation, district-level risk distribution, statutory compliance scorecards, and granular project drilldown
+        </p>
       </div>
 
       {/* State Selector */}
       <div className="filter-bar">
-        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>SELECT STATE</label>
+        <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+          SELECT STATE / UT:
+        </label>
         <select
           className="form-control"
-          style={{ maxWidth: 300 }}
+          style={{ maxWidth: 320 }}
           value={selectedState}
           onChange={(e) => {
             setSelectedState(e.target.value);
@@ -177,46 +195,54 @@ export default function StateDashboard() {
       </div>
 
       {loading || !data ? (
-        <div className="loading-container"><div className="spinner"></div> Loading {selectedState} aggregate data...</div>
+        <div className="loading-container">
+          <div className="spinner" />
+          <span>Loading {selectedState} administrative data…</span>
+        </div>
       ) : (
         <>
           {/* Top KPI Cards */}
           <div className="stats-grid">
             <div className="stat-card">
-              <div className="stat-label">Total Monitored Projects</div>
+              <div className="stat-label">Total Monitored Works</div>
               <div className="stat-value">{data.total_projects?.toLocaleString()}</div>
-              <div className="stat-sub">{selectedState}</div>
+              <div className="stat-sub">{selectedState} Ledger</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Total Funds Sanctioned</div>
+              <div className="stat-label">Total Outlay Sanctioned</div>
               <div className="stat-value">{formatCrore(data.total_sanctioned)}</div>
-              <div className="stat-sub">Allocated budget</div>
+              <div className="stat-sub">Central sanction</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Total Funds Spent</div>
+              <div className="stat-label">Total Funds Disbursed</div>
               <div className="stat-value">{formatCrore(data.total_spent)}</div>
               <div className="stat-sub">
                 {data.total_sanctioned > 0
-                  ? `${(((data.total_spent || 0) / data.total_sanctioned) * 100).toFixed(1)}% utilization`
+                  ? `${(((data.total_spent || 0) / data.total_sanctioned) * 100).toFixed(1)}% absorption`
                   : '0%'}
               </div>
             </div>
-            <div className="stat-card" style={{ borderLeft: '3px solid var(--risk-critical)' }}>
-              <div className="stat-label">Critical Risk Projects</div>
+            <div className="stat-card risk-critical">
+              <div className="stat-label">Critical Anomaly Works</div>
               <div className="stat-value" style={{ color: 'var(--risk-critical)' }}>{data.critical_count}</div>
-              <div className="stat-sub">Risk score &ge; 80</div>
+              <div className="stat-sub">Risk score ≥ 80</div>
             </div>
           </div>
 
           <div className="grid-2">
             {/* Compliance Scorecard */}
             <div className="panel">
-              <div className="panel-header"><h3>State Compliance Scorecard</h3></div>
+              <div className="panel-header">
+                <h3>
+                  <IconShieldCheck size={18} color="var(--gov-navy-800)" />
+                  <span>State Compliance Scorecard</span>
+                </h3>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.85rem' }}>
-                    <span>On-Time Milestone Completion</span>
-                    <span style={{ fontWeight: 600 }}>{data.compliance_scorecard?.on_time_completion_pct}%</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.82rem' }}>
+                    <span>On-Time Milestone Execution</span>
+                    <span style={{ fontWeight: 700 }}>{data.compliance_scorecard?.on_time_completion_pct}%</span>
                   </div>
                   <div className="progress-bar-container">
                     <div
@@ -225,98 +251,133 @@ export default function StateDashboard() {
                         width: `${data.compliance_scorecard?.on_time_completion_pct || 0}%`,
                         backgroundColor: (data.compliance_scorecard?.on_time_completion_pct || 0) >= 80 ? 'var(--risk-low)' : 'var(--risk-medium)'
                       }}
-                    ></div>
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.85rem' }}>
-                    <span>Fiscal Cost Efficiency Rate</span>
-                    <span style={{ fontWeight: 600 }}>{data.compliance_scorecard?.cost_efficiency_pct}%</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.82rem' }}>
+                    <span>Fiscal Cost Efficiency Standard</span>
+                    <span style={{ fontWeight: 700 }}>{data.compliance_scorecard?.cost_efficiency_pct}%</span>
                   </div>
                   <div className="progress-bar-container">
                     <div
                       className="progress-bar-fill"
                       style={{
                         width: `${data.compliance_scorecard?.cost_efficiency_pct || 0}%`,
-                        backgroundColor: (data.compliance_scorecard?.cost_efficiency_pct || 0) >= 80 ? 'var(--accent-primary)' : 'var(--risk-high)'
+                        backgroundColor: (data.compliance_scorecard?.cost_efficiency_pct || 0) >= 80 ? 'var(--gov-navy-800)' : 'var(--risk-high)'
                       }}
-                    ></div>
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.82rem' }}>
                     <span>Public Transparency &amp; Disclosure Index</span>
-                    <span style={{ fontWeight: 600 }}>{data.compliance_scorecard?.transparency_index}%</span>
+                    <span style={{ fontWeight: 700 }}>{data.compliance_scorecard?.transparency_index}%</span>
                   </div>
                   <div className="progress-bar-container">
                     <div
                       className="progress-bar-fill"
                       style={{
                         width: `${data.compliance_scorecard?.transparency_index || 0}%`,
-                        backgroundColor: 'var(--accent-primary)'
+                        backgroundColor: 'var(--gov-navy-800)'
                       }}
-                    ></div>
+                    />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Top 8 Highest Risk Districts Bar Chart */}
+            {/* Top Districts by Project Volume */}
             <div className="panel">
-              <div className="panel-header"><h3>Top Vulnerable Districts (by Avg Risk)</h3></div>
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                    <XAxis dataKey="district" tick={{ fill: '#94a3b8', fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
-                    <YAxis tick={{ fill: '#64748b', fontSize: 11 }} domain={[0, 100]} />
-                    <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }} itemStyle={{ color: 'var(--text-primary)' }} />
-                    <Bar dataKey="avg_risk_score" radius={[6, 6, 0, 0]} fill="#ef4444" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="loading-container">No district data available</div>
-              )}
+              <div className="panel-header">
+                <h3>
+                  <IconDistrict size={18} color="var(--gov-navy-800)" />
+                  <span>District Work Volumes (Top 8)</span>
+                </h3>
+              </div>
+              <ResponsiveContainer width="100%" height={230}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                  <XAxis
+                    dataKey="district"
+                    tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                    angle={-20}
+                    textAnchor="end"
+                    interval={0}
+                  />
+                  <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-card)',
+                      borderRadius: '4px',
+                      boxShadow: 'var(--shadow-md)'
+                    }}
+                    itemStyle={{ color: 'var(--text-primary)', fontSize: '0.8rem' }}
+                  />
+                  <Bar dataKey="project_count" fill="var(--gov-navy-800)" radius={[2, 2, 0, 0]} name="Works" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* District Heatmap Table with Click-to-Drilldown */}
+          {/* District Risk Heatmap Table */}
           <div className="panel">
-            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div className="panel-header" style={{ flexWrap: 'wrap', gap: 10 }}>
               <div>
-                <h3 style={{ display: 'inline-block', marginRight: 10 }}>District Risk Heatmap — {selectedState}</h3>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  👉 Click any district to view its project list below ({filteredHeatmap.length} of {data.district_heatmap?.length || 0} districts)
-                </span>
+                <h3>
+                  <IconDistrict size={18} color="var(--gov-navy-800)" />
+                  <span>District Risk &amp; Performance Ledger ({selectedState})</span>
+                </h3>
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  Click any district row to drill down into its active works
+                </p>
               </div>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="🔍 Search district..."
-                value={districtSearch}
-                onChange={(e) => setDistrictSearch(e.target.value)}
-                style={{ width: 180, fontSize: '0.78rem', padding: '4px 10px' }}
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Filter district by name..."
+                  style={{ width: 220, fontSize: '0.78rem' }}
+                  value={districtSearch}
+                  onChange={(e) => setDistrictSearch(e.target.value)}
+                />
+              </div>
             </div>
-            <div style={{maxHeight:360, overflowY:'auto'}}>
+
+            <div className="table-responsive" style={{ maxHeight: 360 }}>
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>District</th>
-                    <th>Projects</th>
-                    <th>Avg Risk</th>
-                    <th>High Risk</th>
-                    <th>Sanctioned</th>
-                    <th>Risk Level</th>
-                    <th>Action</th>
+                    <th>District Name</th>
+                    <th style={{ textAlign: 'right' }}>Total Works</th>
+                    <th style={{ textAlign: 'center' }}>Avg Anomaly Score</th>
+                    <th style={{ textAlign: 'right' }}>High Risk Works</th>
+                    <th style={{ textAlign: 'right' }}>Critical Flags</th>
+                    <th style={{ textAlign: 'center' }}>Status Tier</th>
+                    <th style={{ textAlign: 'center', width: 120 }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredHeatmap.map((d, i) => {
-                    const riskCat = d.avg_risk_score >= 70 ? 'critical' : d.avg_risk_score >= 55 ? 'high' : d.avg_risk_score >= 40 ? 'medium' : 'low';
-                    const isSelected = selectedDistrict === d.district;
+                    const statusClass =
+                      d.avg_risk >= 65
+                        ? 'critical-alert'
+                        : d.avg_risk >= 50
+                        ? 'high-risk'
+                        : d.avg_risk >= 35
+                        ? 'under-review'
+                        : 'approved';
+                    const statusText =
+                      d.avg_risk >= 65
+                        ? 'Critical'
+                        : d.avg_risk >= 50
+                        ? 'Escalated'
+                        : d.avg_risk >= 35
+                        ? 'Under Review'
+                        : 'Compliant';
 
                     return (
                       <tr
@@ -324,29 +385,37 @@ export default function StateDashboard() {
                         onClick={() => handleDistrictClick(d.district)}
                         style={{
                           cursor: 'pointer',
-                          background: isSelected ? 'rgba(59, 130, 246, 0.12)' : undefined,
-                          borderLeft: isSelected ? '4px solid var(--accent-primary)' : '4px solid transparent'
+                          backgroundColor: selectedDistrict === d.district ? '#EBF4FC' : undefined
                         }}
-                        title="Click to load projects for this district"
                       >
-                        <td style={{fontWeight:600, color: isSelected ? 'var(--accent-hover)' : 'var(--text-primary)'}}>
-                          {isSelected && '👉 '} {d.district}
+                        <td style={{ fontWeight: 700, color: 'var(--gov-navy-900)' }}>
+                          {d.district}
                         </td>
-                        <td>{d.project_count}</td>
-                        <td><span className={`risk-badge ${riskCat}`}>{d.avg_risk_score}</span></td>
-                        <td style={{color:'var(--risk-high)', fontWeight:600}}>{d.high_risk_count}</td>
-                        <td>{formatCrore(d.total_sanctioned)}</td>
-                        <td><span className={`risk-badge ${riskCat}`}>{riskCat}</span></td>
-                        <td>
+                        <td style={{ textAlign: 'right' }}>{d.project_count?.toLocaleString()}</td>
+                        <td style={{ textAlign: 'center', fontWeight: 600 }}>{d.avg_risk?.toFixed(1)}/100</td>
+                        <td style={{ textAlign: 'right', color: d.high_risk_count > 0 ? 'var(--risk-high)' : 'inherit' }}>
+                          {d.high_risk_count}
+                        </td>
+                        <td style={{ textAlign: 'right', color: d.critical_count > 0 ? 'var(--risk-critical)' : 'inherit', fontWeight: 600 }}>
+                          {d.critical_count}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span className={`status-badge ${statusClass}`}>
+                            {statusText}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
                           <button
-                            className={`btn ${isSelected ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                            style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            style={{ padding: '2px 8px', fontSize: '0.72rem' }}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDistrictClick(d.district);
                             }}
                           >
-                            {isSelected ? 'Selected ✓' : 'View Projects'}
+                            <IconInspect size={12} />
+                            <span>Drilldown</span>
                           </button>
                         </td>
                       </tr>
@@ -357,157 +426,127 @@ export default function StateDashboard() {
             </div>
           </div>
 
-          {/* District Projects Drilldown Section */}
+          {/* Granular District Projects Drilldown */}
           {selectedDistrict && (
-            <div className="panel" style={{ marginTop: 20, border: '1px solid var(--accent-primary-glow)' }}>
-              <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="panel" style={{ border: '2px solid var(--gov-navy-800)' }}>
+              <div className="panel-header">
                 <div>
-                  <h3 style={{ margin: 0, color: 'var(--accent-hover)' }}>
-                    📍 Projects in {selectedDistrict}, {selectedState}
+                  <h3>
+                    <IconInspect size={18} color="var(--gov-navy-800)" />
+                    <span>Active Works in {selectedDistrict} District</span>
                   </h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Click any project to inspect full financial, execution, and AI anomaly details
-                  </span>
+                  <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                    Showing live works records filtered from district master ledger
+                  </p>
                 </div>
-
-                {/* Risk Filter Buttons */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'all' ? 'btn-primary' : 'btn-outline'} btn-sm`}
                     onClick={() => setRiskFilter('all')}
                   >
-                    All ({districtProjects.length})
+                    All
                   </button>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'low' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'low' ? { background: 'var(--risk-low)', borderColor: 'var(--risk-low)' } : { color: 'var(--risk-low)' }}
                     onClick={() => setRiskFilter('low')}
                   >
-                    🟢 Safe / Low
+                    Compliant
                   </button>
                   <button
-                    className={`btn ${riskFilter === 'medium' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'medium' ? { background: 'var(--risk-medium)', borderColor: 'var(--risk-medium)' } : { color: 'var(--risk-medium)' }}
-                    onClick={() => setRiskFilter('medium')}
-                  >
-                    🟡 Medium
-                  </button>
-                  <button
+                    type="button"
                     className={`btn ${riskFilter === 'high' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'high' ? { background: 'var(--risk-high)', borderColor: 'var(--risk-high)' } : { color: 'var(--risk-high)' }}
                     onClick={() => setRiskFilter('high')}
                   >
-                    🟠 High
+                    Escalated
                   </button>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'critical' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'critical' ? { background: 'var(--risk-critical)', borderColor: 'var(--risk-critical)' } : { color: 'var(--risk-critical)' }}
                     onClick={() => setRiskFilter('critical')}
                   >
-                    🔴 Critical
+                    Critical
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setSelectedDistrict(null)}
+                    style={{ marginLeft: 6 }}
+                  >
+                    ✕ Close
                   </button>
                 </div>
-              </div>
-
-              {/* Real-Time District Map */}
-              <div style={{ margin: '12px 0 16px 0' }}>
-                <RealTimeDistrictMap
-                  districtName={selectedDistrict}
-                  stateName={selectedState}
-                  districtCoordinates={(() => {
-                    const distObj = (data.district_heatmap || []).find(d => 
-                      d.district.toLowerCase() === selectedDistrict.toLowerCase() ||
-                      matchesDistrict(d.district, selectedDistrict)
-                    );
-                    return distObj && distObj.lat ? { lat: distObj.lat, lon: distObj.lon } : null;
-                  })()}
-                  projects={filteredDistrictProjects}
-                  height="360px"
-                  onSelectProject={(p) => setSelectedProject(p)}
-                />
               </div>
 
               {loadingProjects ? (
-                <div className="loading-container" style={{ minHeight: 140 }}>
-                  <div className="spinner"></div> Loading projects for {selectedDistrict}...
+                <div className="loading-container">
+                  <div className="spinner" />
+                  <span>Fetching works in {selectedDistrict}…</span>
                 </div>
               ) : filteredDistrictProjects.length === 0 ? (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>
-                  No projects found for {selectedDistrict} with risk category "{riskFilter}".
+                  No works found matching the selected filter in {selectedDistrict}.
                 </div>
               ) : (
-                <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+                <div className="table-responsive" style={{ maxHeight: 380 }}>
                   <table className="data-table">
                     <thead>
                       <tr>
                         <th>Project ID</th>
-                        <th>Work Scope</th>
-                        <th>Category</th>
-                        <th>Sanctioned</th>
-                        <th>Spent</th>
-                        <th>Progress</th>
-                        <th>Risk Score</th>
-                        <th>Contractor</th>
-                        <th>Action</th>
+                        <th>Work Description</th>
+                        <th>Implementing Agency</th>
+                        <th style={{ textAlign: 'right' }}>Sanctioned (₹)</th>
+                        <th style={{ textAlign: 'center' }}>Progress</th>
+                        <th style={{ textAlign: 'center' }}>Anomaly Score</th>
+                        <th style={{ textAlign: 'center' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredDistrictProjects.map((p, idx) => {
-                        const pScore = p.risk_score || 0;
-                        const pCat = (p.risk_category || (pScore >= 80 ? 'critical' : pScore >= 60 ? 'high' : pScore >= 40 ? 'medium' : 'low')).toLowerCase();
-                        const pProgress = p.progress_percentage || 0;
-
-                        return (
-                          <tr
-                            key={idx}
-                            onClick={() => setSelectedProject(p)}
-                            style={{ cursor: 'pointer' }}
-                            title="Click to view detailed project profile"
-                          >
-                            <td style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>{p.project_id}</td>
-                            <td style={{ maxWidth: 200, whiteSpace: 'normal', fontSize: '0.82rem' }}>
-                              {p.work_description || 'MPLADS project'}
-                            </td>
-                            <td><span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{p.category}</span></td>
-                            <td>{formatLakh(p.amount_sanctioned)}</td>
-                            <td>{formatLakh(p.amount_spent)}</td>
-                            <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <div className="progress-bar-container" style={{ width: 45, height: 6 }}>
-                                  <div
-                                    className="progress-bar-fill"
-                                    style={{
-                                      width: `${Math.min(pProgress, 100)}%`,
-                                      background: pProgress >= 95 ? 'var(--risk-low)' : 'var(--accent-primary)'
-                                    }}
-                                  />
-                                </div>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{pProgress.toFixed(0)}%</span>
-                              </div>
-                            </td>
-                            <td>
-                              <span className={`risk-badge ${pCat}`}>
-                                {pScore.toFixed(0)}/100
-                              </span>
-                            </td>
-                            <td style={{ maxWidth: 130, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                              {p.contractor || 'State Agency'}
-                            </td>
-                            <td>
-                              <button
-                                className="btn btn-outline btn-sm"
-                                style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProject(p);
-                                }}
-                              >
-                                Details 🔍
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {filteredDistrictProjects.map((p, i) => (
+                        <tr
+                          key={i}
+                          onClick={() => setSelectedProject(p)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <td style={{ fontWeight: 700, color: 'var(--gov-navy-800)' }}>
+                            {p.project_id}
+                          </td>
+                          <td style={{ maxWidth: 260, whiteSpace: 'normal' }}>{p.work_description}</td>
+                          <td>{p.contractor}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatLakh(p.amount_sanctioned)}</td>
+                          <td style={{ textAlign: 'center' }}>{p.progress_percentage}%</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span
+                              className={`status-badge ${
+                                p.risk_score >= 80
+                                  ? 'critical-alert'
+                                  : p.risk_score >= 60
+                                  ? 'high-risk'
+                                  : p.risk_score >= 40
+                                  ? 'under-review'
+                                  : 'approved'
+                              }`}
+                            >
+                              {p.risk_score?.toFixed(0)}/100
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-sm"
+                              style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProject(p);
+                              }}
+                            >
+                              <IconInspect size={12} />
+                              <span>Inspect</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -515,10 +554,11 @@ export default function StateDashboard() {
             </div>
           )}
 
-          {/* State-Level Contractor-District Network */}
-          <div style={{ marginTop: 24 }}>
-            <ContractorNetworkGraph defaultState={selectedState} />
-          </div>
+          {/* Interactive Geospatial Map */}
+          <RealTimeDistrictMap stateName={selectedState} />
+
+          {/* Interactive AI Contractor Network Graph */}
+          <ContractorNetworkGraph stateName={selectedState} />
         </>
       )}
 

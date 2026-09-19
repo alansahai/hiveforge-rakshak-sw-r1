@@ -16,33 +16,33 @@ import {
 import ContractorDetailModal from './ContractorDetailModal';
 
 const THEMES = {
-  cyber: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#2dd4bf', '#fbbf24', '#34d399'],
-  emerald: ['#10b981', '#059669', '#14b8a6', '#06b6d4', '#84cc16', '#22c55e', '#15803d', '#34d399'],
-  sunset: ['#f59e0b', '#f97316', '#ef4444', '#ec4899', '#d97706', '#b91c1c', '#fb923c', '#fbbf24'],
-  ocean: ['#3b82f6', '#1d4ed8', '#0284c7', '#0369a1', '#6366f1', '#4f46e5', '#38bdf8', '#2563eb'],
+  navy: ['#0A2540', '#0B3B60', '#1D4ED8', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#1E3A8A'],
+  tricolor: ['#0A2540', '#C2410C', '#15803D', '#0B3B60', '#D97706', '#16A34A', '#2563EB', '#F59E0B'],
+  emerald: ['#15803D', '#16A34A', '#0D9488', '#059669', '#10B981', '#22C55E', '#047857', '#34D399'],
+  slate: ['#334155', '#475569', '#64748B', '#0284C7', '#0369A1', '#4338CA', '#0891B2', '#0E7490'],
 };
 
 const X_AXIS_OPTIONS = [
-  { value: 'category', label: '🏷️ Project Category (Roads, Water, Health...)' },
-  { value: 'state', label: '🚩 State / Union Territory' },
-  { value: 'district', label: '📍 District' },
-  { value: 'mp_name', label: '👤 Member of Parliament (MP)' },
-  { value: 'contractor', label: '🏗️ Implementing Agency / Contractor' },
-  { value: 'risk_category', label: '⚠️ Risk Tier (Low, Medium, High, Critical)' },
-  { value: 'timeline_status', label: '⏱️ Timeline Status (On track, Delayed...)' },
-  { value: 'house', label: '🏛️ House (Lok Sabha vs Rajya Sabha)' },
-  { value: 'year', label: '📅 Sanction Year' },
+  { value: 'category', label: 'Project Category (Roads, Water, Health...)' },
+  { value: 'state', label: 'State / Union Territory' },
+  { value: 'district', label: 'District' },
+  { value: 'mp_name', label: 'Member of Parliament (MP)' },
+  { value: 'contractor', label: 'Implementing Agency / Contractor' },
+  { value: 'risk_category', label: 'Risk Band (Low, Medium, High, Critical)' },
+  { value: 'timeline_status', label: 'Timeline Status (On track, Delayed...)' },
+  { value: 'house', label: 'House (Lok Sabha vs Rajya Sabha)' },
+  { value: 'year', label: 'Sanction Year' },
 ];
 
 const Y_AXIS_OPTIONS = [
-  { value: 'amount_sanctioned', label: '💰 Total Amount Sanctioned (₹)', format: 'currency' },
-  { value: 'amount_spent', label: '💸 Total Amount Spent (₹)', format: 'currency' },
-  { value: 'risk_score', label: '⚡ Risk Score (0 - 100)', format: 'number' },
-  { value: 'project_count', label: '📊 Project Volume (Count)', format: 'number' },
-  { value: 'cost_overrun', label: '📈 Cost Overrun %', format: 'percent' },
-  { value: 'progress_percentage', label: '🏗️ Physical Progress %', format: 'percent' },
-  { value: 'critical_alerts', label: '🚨 Critical Projects Count', format: 'number' },
-  { value: 'days_behind_schedule', label: '⏳ Days Behind Schedule', format: 'number' },
+  { value: 'amount_sanctioned', label: 'Total Amount Sanctioned (₹)', format: 'currency' },
+  { value: 'amount_spent', label: 'Total Amount Spent (₹)', format: 'currency' },
+  { value: 'risk_score', label: 'Risk Score (0 - 100)', format: 'number' },
+  { value: 'project_count', label: 'Project Volume (Count)', format: 'number' },
+  { value: 'cost_overrun', label: 'Cost Overrun %', format: 'percent' },
+  { value: 'progress_percentage', label: 'Physical Progress %', format: 'percent' },
+  { value: 'critical_alerts', label: 'Critical Projects Count', format: 'number' },
+  { value: 'days_behind_schedule', label: 'Days Behind Schedule', format: 'number' },
 ];
 
 const PRESETS = [
@@ -84,7 +84,7 @@ export default function CustomChartStudio() {
   const [agg, setAgg] = useState('sum');
   const [chartType, setChartType] = useState('bar');
   const [limit, setLimit] = useState(15);
-  const [theme, setTheme] = useState('cyber');
+  const [theme, setTheme] = useState('navy');
 
   // Filters
   const [selectedStateFilter, setSelectedStateFilter] = useState('');
@@ -182,7 +182,7 @@ export default function CustomChartStudio() {
     }
   }, [xAxis, yAxis, agg, chartType, limit, selectedStateFilter, selectedRiskFilter, minAmountFilter, studioTab]);
 
-  const colors = THEMES[theme] || THEMES.cyber;
+  const colors = THEMES[theme] || THEMES.navy;
 
   const formatTooltipValue = (val) => {
     if (val == null) return '0';
@@ -270,8 +270,8 @@ export default function CustomChartStudio() {
       {/* Page Header */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2>📊 Self-Service Analytics Studio &amp; Multi-Entity Benchmarking Hub</h2>
-          <p>Create arbitrary dimensional plots, analyze multi-MP portfolios side-by-side, and cross-compare implementing contractors</p>
+          <h2>Self-Service Analytics Studio &amp; Multi-Entity Benchmarking Hub</h2>
+          <p>Multi-dimensional query configuration, parliamentary benchmarking, and vendor concentration analysis</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {studioTab === 'plotter' && (
@@ -279,17 +279,15 @@ export default function CustomChartStudio() {
               className="btn btn-outline btn-sm"
               onClick={exportCSV}
               disabled={chartData.length === 0}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
-              <span>📥</span> Export CSV
+              Export CSV
             </button>
           )}
           <button
             className="btn btn-primary btn-sm"
             onClick={loadData}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            <span>🔄</span> Refresh Intelligence
+            Refresh Query
           </button>
         </div>
       </div>
@@ -308,17 +306,14 @@ export default function CustomChartStudio() {
             background: studioTab === 'plotter' ? 'var(--accent-primary)' : 'var(--bg-card)',
             color: studioTab === 'plotter' ? '#fff' : 'var(--text-secondary)',
             border: `1px solid ${studioTab === 'plotter' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-            borderRadius: 6,
+            borderRadius: 4,
             padding: '8px 16px',
             fontSize: '0.84rem',
             cursor: 'pointer',
             fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
           }}
         >
-          📊 Custom X/Y Plotter
+          Custom Dimensional Plotter
         </button>
 
         <button
@@ -327,17 +322,14 @@ export default function CustomChartStudio() {
             background: studioTab === 'mps' ? 'var(--accent-primary)' : 'var(--bg-card)',
             color: studioTab === 'mps' ? '#fff' : 'var(--text-secondary)',
             border: `1px solid ${studioTab === 'mps' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-            borderRadius: 6,
+            borderRadius: 4,
             padding: '8px 16px',
             fontSize: '0.84rem',
             cursor: 'pointer',
             fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
           }}
         >
-          👥 Multi-MP Comparative Benchmarking
+          Multi-MP Comparative Benchmarking
         </button>
 
         <button
@@ -346,17 +338,14 @@ export default function CustomChartStudio() {
             background: studioTab === 'vendors' ? 'var(--accent-primary)' : 'var(--bg-card)',
             color: studioTab === 'vendors' ? '#fff' : 'var(--text-secondary)',
             border: `1px solid ${studioTab === 'vendors' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-            borderRadius: 6,
+            borderRadius: 4,
             padding: '8px 16px',
             fontSize: '0.84rem',
             cursor: 'pointer',
             fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6
           }}
         >
-          🏗️ Multi-Vendor Comparative Hub
+          Multi-Vendor Comparative Hub
         </button>
       </div>
 
@@ -366,9 +355,9 @@ export default function CustomChartStudio() {
       {studioTab === 'plotter' && (
         <div>
           {/* Presets Strip */}
-          <div style={{ background: 'var(--bg-card)', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-subtle)', marginBottom: 16 }}>
+          <div style={{ background: 'var(--bg-card)', padding: '10px 14px', borderRadius: 4, border: '1px solid var(--border-subtle)', marginBottom: 16 }}>
             <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase' }}>
-              💡 Popular Analytical Query Templates:
+              Standard Analytical Query Templates:
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {PRESETS.map((p, i) => (
@@ -388,8 +377,8 @@ export default function CustomChartStudio() {
           <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, alignItems: 'start' }}>
             {/* Left Column: Workbench Controls */}
             <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
-              <h3 style={{ margin: '0 0 14px 0', fontSize: '0.92rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>🛠️</span> Plot Configurator
+              <h3 style={{ margin: '0 0 14px 0', fontSize: '0.92rem', color: 'var(--accent-primary)' }}>
+                Plot Configurator
               </h3>
 
               {/* X-Axis Dimension */}
@@ -466,12 +455,12 @@ export default function CustomChartStudio() {
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
                   {[
-                    { id: 'bar', label: '📊 Bar' },
-                    { id: 'horizontal_bar', label: '📶 Horiz' },
-                    { id: 'line', label: '📈 Line' },
-                    { id: 'area', label: '🏔️ Area' },
-                    { id: 'scatter', label: '🔘 Scatter' },
-                    { id: 'pie', label: '🍩 Donut' },
+                    { id: 'bar', label: 'Vertical Bar' },
+                    { id: 'horizontal_bar', label: 'Horizontal Bar' },
+                    { id: 'line', label: 'Trend Line' },
+                    { id: 'area', label: 'Area Fill' },
+                    { id: 'scatter', label: 'Scatter' },
+                    { id: 'pie', label: 'Donut' },
                   ].map((c) => (
                     <button
                       key={c.id}
@@ -479,13 +468,14 @@ export default function CustomChartStudio() {
                       onClick={() => setChartType(c.id)}
                       style={{
                         padding: '6px 4px',
-                        fontSize: '0.74rem',
+                        fontSize: '0.72rem',
                         borderRadius: 4,
                         cursor: 'pointer',
                         textAlign: 'center',
-                        background: chartType === c.id ? 'rgba(59, 130, 246, 0.25)' : 'var(--bg-input)',
+                        background: chartType === c.id ? 'rgba(11, 59, 96, 0.15)' : 'var(--bg-input)',
                         border: `1px solid ${chartType === c.id ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-                        color: chartType === c.id ? 'var(--text-primary)' : 'var(--text-secondary)'
+                        color: chartType === c.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        fontWeight: chartType === c.id ? 700 : 500
                       }}
                     >
                       {c.label}
@@ -524,7 +514,7 @@ export default function CustomChartStudio() {
                   style={{ width: '100%', fontSize: '0.76rem' }}
                 >
                   <option value="">All Risk Bands</option>
-                  <option value="low">Safe / Low Risk (&lt;40)</option>
+                  <option value="low">Low Risk (&lt;40)</option>
                   <option value="medium">Medium Risk (40-60)</option>
                   <option value="high">High Risk (60-80)</option>
                   <option value="critical">Critical Risk (&gt;=80)</option>
@@ -553,7 +543,7 @@ export default function CustomChartStudio() {
 
                 <div>
                   <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                    PALETTE
+                    COLOR PALETTE
                   </label>
                   <select
                     className="form-control"
@@ -561,10 +551,10 @@ export default function CustomChartStudio() {
                     onChange={(e) => setTheme(e.target.value)}
                     style={{ width: '100%', fontSize: '0.76rem' }}
                   >
-                    <option value="cyber">Cyber Neon</option>
-                    <option value="emerald">Emerald</option>
-                    <option value="sunset">Sunset Amber</option>
-                    <option value="ocean">Deep Ocean</option>
+                    <option value="navy">National Navy (Default)</option>
+                    <option value="tricolor">Tricolor Accent</option>
+                    <option value="emerald">Forest &amp; Ecology</option>
+                    <option value="slate">Administrative Slate</option>
                   </select>
                 </div>
               </div>
@@ -584,34 +574,36 @@ export default function CustomChartStudio() {
                 </div>
 
                 {/* Switcher */}
-                <div style={{ display: 'flex', background: 'var(--bg-input)', borderRadius: 6, padding: 2 }}>
+                <div style={{ display: 'flex', background: 'var(--bg-input)', borderRadius: 4, padding: 2 }}>
                   <button
                     style={{
                       padding: '4px 12px',
                       fontSize: '0.74rem',
                       border: 'none',
-                      borderRadius: 4,
+                      borderRadius: 3,
                       cursor: 'pointer',
                       background: activeTab === 'chart' ? 'var(--accent-primary)' : 'transparent',
-                      color: activeTab === 'chart' ? '#fff' : 'var(--text-secondary)'
+                      color: activeTab === 'chart' ? '#fff' : 'var(--text-secondary)',
+                      fontWeight: activeTab === 'chart' ? 600 : 400
                     }}
                     onClick={() => setActiveTab('chart')}
                   >
-                    📈 Plot View
+                    Chart View
                   </button>
                   <button
                     style={{
                       padding: '4px 12px',
                       fontSize: '0.74rem',
                       border: 'none',
-                      borderRadius: 4,
+                      borderRadius: 3,
                       cursor: 'pointer',
                       background: activeTab === 'table' ? 'var(--accent-primary)' : 'transparent',
-                      color: activeTab === 'table' ? '#fff' : 'var(--text-secondary)'
+                      color: activeTab === 'table' ? '#fff' : 'var(--text-secondary)',
+                      fontWeight: activeTab === 'table' ? 600 : 400
                     }}
                     onClick={() => setActiveTab('table')}
                   >
-                    📋 Data Table ({chartData.length})
+                    Data Table ({chartData.length})
                   </button>
                 </div>
               </div>
@@ -760,8 +752,8 @@ export default function CustomChartStudio() {
           <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  👥 Select Members of Parliament to Compare ({comparedMps.length} selected)
+                <h3 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--accent-primary)' }}>
+                  Select Members of Parliament to Compare ({comparedMps.length} selected)
                 </h3>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   Benchmark fund utilization, completion rate, portfolio risk score, and execution velocity across constituencies.
@@ -770,7 +762,7 @@ export default function CustomChartStudio() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="🔍 Search MP name or state..."
+                placeholder="Search MP name or state..."
                 value={mpSearch}
                 onChange={(e) => setMpSearch(e.target.value)}
                 style={{ width: 240, fontSize: '0.8rem' }}
@@ -800,10 +792,10 @@ export default function CustomChartStudio() {
                           }
                         }}
                         style={{
-                          background: isSelected ? 'rgba(59, 130, 246, 0.25)' : 'var(--bg-input)',
+                          background: isSelected ? 'rgba(11, 59, 96, 0.15)' : 'var(--bg-input)',
                           border: `1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-                          color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                          borderRadius: 14,
+                          color: isSelected ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                          borderRadius: 4,
                           padding: '3px 10px',
                           fontSize: '0.72rem',
                           cursor: 'pointer',
@@ -830,7 +822,7 @@ export default function CustomChartStudio() {
                 {/* Outlay vs Expenditure Chart */}
                 <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    💰 Sanctioned Funds vs Actual Expenditure (₹ Crore)
+                    Sanctioned Funds vs Actual Expenditure (₹ Crore)
                   </h4>
                   <div style={{ width: '100%', height: 280 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -839,12 +831,12 @@ export default function CustomChartStudio() {
                         <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={40} />
                         <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}
                           formatter={(val, name) => [`₹${val} Cr`, name === 'sanctionedCr' ? 'Sanctioned Outlay' : 'Amount Spent']}
                         />
                         <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: 6 }} />
-                        <Bar dataKey="sanctionedCr" name="Sanctioned Outlay" fill="#38bdf8" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="spentCr" name="Amount Spent" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="sanctionedCr" name="Sanctioned Outlay" fill="#0B3B60" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="spentCr" name="Amount Spent" fill="#15803D" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -853,7 +845,7 @@ export default function CustomChartStudio() {
                 {/* Completion Rate vs Average Risk Score Chart */}
                 <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    ⚡ Completion Rate (%) vs Portfolio Risk Score (/100)
+                    Completion Rate (%) vs Portfolio Risk Score (/100)
                   </h4>
                   <div style={{ width: '100%', height: 280 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -862,12 +854,12 @@ export default function CustomChartStudio() {
                         <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={40} />
                         <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}
                           formatter={(val, name) => [name === 'completionRate' ? `${val}%` : `${val}/100`, name === 'completionRate' ? 'Physical Completion %' : 'Avg Risk Score']}
                         />
                         <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: 6 }} />
-                        <Bar dataKey="completionRate" name="Physical Completion %" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="riskScore" name="Avg Risk Score" fill="#f97316" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="completionRate" name="Physical Completion %" fill="#2563EB" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="riskScore" name="Avg Risk Score" fill="#C2410C" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -877,7 +869,7 @@ export default function CustomChartStudio() {
               {/* MP Comparison Benchmarking Table */}
               <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '0.92rem', color: 'var(--text-primary)' }}>
-                  📋 Multi-MP Portfolio Scorecard
+                  Multi-MP Portfolio Scorecard
                 </h4>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="data-table" style={{ fontSize: '0.8rem' }}>
@@ -905,8 +897,8 @@ export default function CustomChartStudio() {
                             <td>{m.total_projects?.toLocaleString()}</td>
                             <td style={{ fontWeight: 600 }}>{formatCrore(m.total_sanctioned)}</td>
                             <td>{formatCrore(m.total_spent)}</td>
-                            <td style={{ fontWeight: 700, color: util > 100 ? '#ef4444' : 'var(--text-primary)' }}>{util}%</td>
-                            <td style={{ color: '#22c55e', fontWeight: 600 }}>{m.completion_rate}%</td>
+                            <td style={{ fontWeight: 700, color: util > 100 ? 'var(--risk-critical)' : 'var(--text-primary)' }}>{util}%</td>
+                            <td style={{ color: 'var(--risk-low)', fontWeight: 600 }}>{m.completion_rate}%</td>
                             <td>
                               <span style={{ color: rColor, fontWeight: 700 }}>
                                 {m.avg_risk_score}/100
@@ -942,8 +934,8 @@ export default function CustomChartStudio() {
           <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  🏗️ Select Contractors / Vendors to Compare ({comparedVendors.length} selected)
+                <h3 style={{ margin: 0, fontSize: '0.98rem', color: 'var(--accent-primary)' }}>
+                  Select Contractors / Vendors to Compare ({comparedVendors.length} selected)
                 </h3>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   Examine vendor concentration, cross-district execution sprawl, and systemic project delivery risks.
@@ -952,7 +944,7 @@ export default function CustomChartStudio() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="🔍 Search contractor name..."
+                placeholder="Search contractor name..."
                 value={vendorSearch}
                 onChange={(e) => setVendorSearch(e.target.value)}
                 style={{ width: 240, fontSize: '0.8rem' }}
@@ -981,10 +973,10 @@ export default function CustomChartStudio() {
                           }
                         }}
                         style={{
-                          background: isSelected ? 'rgba(59, 130, 246, 0.25)' : 'var(--bg-input)',
+                          background: isSelected ? 'rgba(11, 59, 96, 0.15)' : 'var(--bg-input)',
                           border: `1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-                          color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
-                          borderRadius: 14,
+                          color: isSelected ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                          borderRadius: 4,
                           padding: '3px 10px',
                           fontSize: '0.72rem',
                           cursor: 'pointer',
@@ -1011,7 +1003,7 @@ export default function CustomChartStudio() {
                 {/* Projects Volume & Outlay Chart */}
                 <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    📊 Work Volume vs Contract Value (₹ Crore)
+                    Work Volume vs Contract Value (₹ Crore)
                   </h4>
                   <div style={{ width: '100%', height: 280 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -1020,12 +1012,12 @@ export default function CustomChartStudio() {
                         <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={40} />
                         <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}
                           formatter={(val, name) => [name === 'sanctionedCr' ? `₹${val} Cr` : `${val} works`, name === 'sanctionedCr' ? 'Contract Value' : 'Projects Volume']}
                         />
                         <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: 6 }} />
-                        <Bar dataKey="projects" name="Projects Volume" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="sanctionedCr" name="Contract Value (₹ Cr)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="projects" name="Projects Volume" fill="#0284C7" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="sanctionedCr" name="Contract Value (₹ Cr)" fill="#D97706" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1034,7 +1026,7 @@ export default function CustomChartStudio() {
                 {/* Risk Score & Cross-District Concurrency Chart */}
                 <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    ⚠️ Average Risk Score (/100) &amp; Operating Districts
+                    Average Risk Score (/100) &amp; Operating Districts
                   </h4>
                   <div style={{ width: '100%', height: 280 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -1043,12 +1035,12 @@ export default function CustomChartStudio() {
                         <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={40} />
                         <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}
                           formatter={(val, name) => [name === 'riskScore' ? `${val}/100` : `${val} districts`, name === 'riskScore' ? 'Avg Risk Score' : 'Operating Districts Count']}
                         />
                         <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: 6 }} />
-                        <Bar dataKey="riskScore" name="Avg Risk Score" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="districtsCount" name="Operating Districts Count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="riskScore" name="Avg Risk Score" fill="#DC2626" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="districtsCount" name="Operating Districts Count" fill="#475569" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1058,7 +1050,7 @@ export default function CustomChartStudio() {
               {/* Vendor Benchmarking Table */}
               <div className="panel" style={{ padding: 16, background: 'var(--bg-card)' }}>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: '0.92rem', color: 'var(--text-primary)' }}>
-                  📋 Contractor Delivery Risk Matrix
+                  Contractor Delivery Risk Matrix
                 </h4>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="data-table" style={{ fontSize: '0.8rem' }}>
@@ -1087,14 +1079,14 @@ export default function CustomChartStudio() {
                             <td>{v.districts_count} districts</td>
                             <td>
                               {v.concurrency_alert ? (
-                                <span style={{ color: '#ef4444', fontWeight: 700, background: 'rgba(239,68,68,0.15)', padding: '2px 6px', borderRadius: 4, fontSize: '0.72rem' }}>
-                                  ⚡ Flagged
+                                <span className="risk-badge critical" style={{ fontSize: '0.72rem' }}>
+                                  Flagged
                                 </span>
                               ) : (
-                                <span style={{ color: '#22c55e', fontSize: '0.72rem' }}>Normal</span>
+                                <span className="risk-badge low" style={{ fontSize: '0.72rem' }}>Normal</span>
                               )}
                             </td>
-                            <td style={{ color: v.cost_overrun_pct > 0 ? '#ef4444' : 'var(--text-secondary)' }}>
+                            <td style={{ color: v.cost_overrun_pct > 0 ? 'var(--risk-critical)' : 'var(--text-secondary)' }}>
                               {v.cost_overrun_pct > 0 ? `+${v.cost_overrun_pct}%` : '0%'}
                             </td>
                             <td>

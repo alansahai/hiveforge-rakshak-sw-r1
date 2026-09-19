@@ -169,25 +169,25 @@ const FALLBACK_DISTRICT_COORDS = {
 
 const TILE_PROVIDERS = {
   streets: {
-    name: '🗺️ Streets',
+    name: 'Standard Streets',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
     subdomains: '',
     maxZoom: 19
   },
   dark: {
-    name: '🌃 Cyber Dark',
+    name: 'High-Contrast Dark',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     subdomains: '',
     maxZoom: 19
   },
   satellite: {
-    name: '🛰️ Satellite',
+    name: 'Satellite Orthoimagery',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     subdomains: '',
     maxZoom: 19
   },
   osm: {
-    name: '🌐 OpenStreetMap',
+    name: 'OpenStreetMap',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     subdomains: 'abc',
     maxZoom: 19
@@ -472,8 +472,8 @@ export default function RealTimeDistrictMap({
             <div style="width:${p.progress_percentage || 0}%; height:100%; background:${color};"></div>
           </div>
         </div>
-        <button id="inspect-btn-${p.project_id}" style="width:100%; background:#3b82f6; color:#fff; border:none; padding:5px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">
-          🔍 Inspect Project Dossier
+        <button id="inspect-btn-${p.project_id}" style="width:100%; background:var(--accent-primary, #0B3B60); color:#fff; border:none; padding:6px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">
+          Inspect Project Dossier
         </button>
       `;
 
@@ -507,7 +507,7 @@ export default function RealTimeDistrictMap({
   };
 
   return (
-    <div className="panel" style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(59, 130, 246, 0.3)', background: 'var(--bg-card)' }}>
+    <div className="panel" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border-subtle)', background: 'var(--bg-card)' }}>
       {/* Map Control Toolbar */}
       <div style={{
         display: 'flex',
@@ -521,7 +521,6 @@ export default function RealTimeDistrictMap({
       }}>
         {/* District Title & Live Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '1.1rem' }}>🗺️</span>
           <div>
             <h4 style={{ margin: 0, fontSize: '0.92rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
               Real-Time District Geospatial Project Map — {districtName || 'District Overview'}

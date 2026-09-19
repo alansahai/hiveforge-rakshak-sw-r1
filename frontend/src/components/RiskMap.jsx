@@ -25,7 +25,7 @@ export default function RiskMap() {
   if (!summary) {
     return (
       <div className="panel">
-        <div className="panel-header"><h3>🗺️ State Risk Intensity Map</h3></div>
+        <div className="panel-header"><h3>State Risk Intensity Map</h3></div>
         <div className="loading-container"><div className="spinner"></div></div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function RiskMap() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3>🗺️ State Risk Intensity Map</h3>
+        <h3>State Risk Intensity Map</h3>
         <span style={{fontSize:'0.75rem', color:'var(--text-muted)'}}>28 States • {summary.total_projects.toLocaleString()} projects</span>
       </div>
 

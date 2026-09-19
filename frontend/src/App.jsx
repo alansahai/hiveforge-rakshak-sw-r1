@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import GovHeader from './components/common/GovHeader';
+import GovBreadcrumbs from './components/common/GovBreadcrumbs';
+import GovFooter from './components/common/GovFooter';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
+import PublicPortalPage from './pages/PublicPortalPage';
 import MPDashboard from './components/MPDashboard';
 import StateDashboard from './components/StateDashboard';
 import DistrictDashboard from './components/DistrictDashboard';
@@ -20,12 +24,34 @@ function ProtectedRoute({ element }) {
   return element;
 }
 
-// ── Layout with sidebar ──────────────────────────────────────────────────────
+// ── Layout with Government Portal Header, Breadcrumbs, Sidebar, and Footer ──
 function AppLayout({ children }) {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('mplads_theme') || 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('mplads_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   return (
-    <div className="app-layout">
-      <Sidebar />
-      <main className="main-content">{children}</main>
+    <div className="gov-portal-wrapper">
+      <GovHeader theme={theme} onToggleTheme={toggleTheme} />
+      <div className="app-layout">
+        <Sidebar />
+        <div className="main-wrapper">
+          <GovBreadcrumbs />
+          <main id="main-content" className="main-content" tabIndex="-1">
+            {children}
+          </main>
+          <GovFooter />
+        </div>
+      </div>
     </div>
   );
 }
@@ -33,20 +59,14 @@ function AppLayout({ children }) {
 function App() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public Landing & Overview Portal Dashboard */}
+      <Route path="/" element={<PublicPortalPage />} />
+
+      {/* Public Login */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Root redirect */}
-      <Route
-        path="/"
-        element={
-          isAuthenticated()
-            ? <Navigate to={`/${getCurrentRole() || 'ministry'}`} replace />
-            : <Navigate to="/login" replace />
-        }
-      />
 
-      {/* Protected — all wrapped in sidebar layout */}
+      {/* Protected — all wrapped in government public service portal layout */}
       <Route
         path="/overview"
         element={

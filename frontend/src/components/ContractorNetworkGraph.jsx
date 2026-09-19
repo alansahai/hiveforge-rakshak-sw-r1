@@ -534,7 +534,7 @@ export default function ContractorNetworkGraph({ defaultState = '' }) {
       <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-heading)' }}>
-            🌐 3D Contractor Cartel & Cross-District Network
+            3D Contractor Cartel &amp; Cross-District Network
             <span style={{ fontSize: '0.72rem', background: 'var(--accent-primary-glow)', color: 'var(--accent-primary)', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
               60 FPS Canvas Engine
             </span>
@@ -635,7 +635,7 @@ export default function ContractorNetworkGraph({ defaultState = '' }) {
               cursor: 'pointer'
             }}
           >
-            {is3D ? '🪐 3D Projection' : '🗺️ 2D Planar'}
+            {is3D ? '3D Projection' : '2D Planar Layout'}
           </button>
 
           {is3D && (
@@ -651,7 +651,7 @@ export default function ContractorNetworkGraph({ defaultState = '' }) {
                 cursor: 'pointer'
               }}
             >
-              {autoRotate ? '⏸ Pause Orbit' : '▶ Auto-Orbit'}
+              {autoRotate ? 'Pause Orbit' : 'Auto-Orbit'}
             </button>
           )}
 
@@ -718,7 +718,7 @@ export default function ContractorNetworkGraph({ defaultState = '' }) {
             pointerEvents: 'none',
             zIndex: 10
           }}>
-            🖱️ Drag: Rotate 3D · Shift+Drag: Pan · Scroll: Zoom · Click Node: Open Dossier
+            Drag: Rotate 3D · Shift+Drag: Pan · Scroll: Zoom · Click Node: Open Dossier
           </div>
 
           {/* Color Legend HUD */}
@@ -812,7 +812,7 @@ export default function ContractorNetworkGraph({ defaultState = '' }) {
               </div>
               {activeFocus.concurrency_flag && (
                 <div style={{ marginTop: 6, padding: '4px 6px', background: 'rgba(239,68,68,0.15)', borderRadius: 4, color: '#fca5a5', fontSize: '0.72rem' }}>
-                  ⚡ <strong>Concurrency Flag:</strong> Multi-district public work execution
+                  <strong>Concurrency Flag:</strong> Multi-district public work execution
                 </div>
               )}
               <button
@@ -826,7 +826,7 @@ export default function ContractorNetworkGraph({ defaultState = '' }) {
                   }
                 }}
               >
-                🔍 Open Detailed {activeFocus.type === 'contractor' ? 'Contractor' : 'District'} View
+                Open Detailed {activeFocus.type === 'contractor' ? 'Contractor' : 'District'} View
               </button>
             </div>
           )}

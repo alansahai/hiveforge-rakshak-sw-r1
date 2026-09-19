@@ -53,7 +53,6 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
         <div className="modal-header" style={{ borderBottom: '1px solid var(--border-subtle)', padding: '16px 20px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '1.2rem' }}>📍</span>
               <h3 style={{ margin: 0, color: 'var(--text-heading)', fontSize: '1.15rem' }}>
                 {data?.district || districtName} District Project Hub
               </h3>
@@ -78,21 +77,21 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
             </div>
           ) : error ? (
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--risk-critical)' }}>
-              ⚠️ {error}
+              {error}
             </div>
           ) : data ? (
             <>
               {/* Top Action Bar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-input)', padding: '10px 14px', borderRadius: 8, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-input)', padding: '10px 14px', borderRadius: 4, marginBottom: 16 }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Detailed administrative view for District Planning & Implementing Agencies
+                  Detailed administrative view for District Planning &amp; Implementing Agencies
                 </span>
                 <button
                   className="btn btn-primary btn-sm"
                   style={{ fontSize: '0.78rem' }}
                   onClick={handleNavigateToDistrictAuthority}
                 >
-                  🏛️ Open Full District Authority Dashboard →
+                  Open Full District Authority Dashboard →
                 </button>
               </div>
 
@@ -135,14 +134,14 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
                     padding: '6px 14px',
                     fontSize: '0.78rem',
                     fontWeight: 600,
-                    borderRadius: 6,
+                    borderRadius: 4,
                     cursor: 'pointer',
                     background: modalTab === 'map' ? 'var(--accent-primary)' : 'var(--bg-input)',
                     border: `1px solid ${modalTab === 'map' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
                     color: modalTab === 'map' ? '#fff' : 'var(--text-secondary)'
                   }}
                 >
-                  🗺️ Live Geospatial Map
+                  Live Geospatial Map
                 </button>
                 <button
                   onClick={() => setModalTab('table')}
@@ -150,14 +149,14 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
                     padding: '6px 14px',
                     fontSize: '0.78rem',
                     fontWeight: 600,
-                    borderRadius: 6,
+                    borderRadius: 4,
                     cursor: 'pointer',
                     background: modalTab === 'table' ? 'var(--accent-primary)' : 'var(--bg-input)',
                     border: `1px solid ${modalTab === 'table' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
                     color: modalTab === 'table' ? '#fff' : 'var(--text-secondary)'
                   }}
                 >
-                  📋 Projects Registry ({data.projects?.length || 0})
+                  Projects Registry ({data.projects?.length || 0})
                 </button>
                 <button
                   onClick={() => setModalTab('contractors')}
@@ -165,14 +164,14 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
                     padding: '6px 14px',
                     fontSize: '0.78rem',
                     fontWeight: 600,
-                    borderRadius: 6,
+                    borderRadius: 4,
                     cursor: 'pointer',
                     background: modalTab === 'contractors' ? 'var(--accent-primary)' : 'var(--bg-input)',
                     border: `1px solid ${modalTab === 'contractors' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
                     color: modalTab === 'contractors' ? '#fff' : 'var(--text-secondary)'
                   }}
                 >
-                  🏗️ Active Contractors ({data.contractor_performance?.length || 0})
+                  Active Contractors ({data.contractor_performance?.length || 0})
                 </button>
               </div>
 
@@ -194,7 +193,7 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
               {modalTab === 'contractors' && data.contractor_performance && data.contractor_performance.length > 0 && (
                 <div className="panel" style={{ padding: 14, marginBottom: 18 }}>
                   <div className="panel-header" style={{ marginBottom: 10 }}>
-                    <h4 style={{ margin: 0, fontSize: '0.85rem' }}>🏗️ Key Contractors Active in {data.district}</h4>
+                    <h4 style={{ margin: 0, fontSize: '0.85rem' }}>Key Contractors Active in {data.district}</h4>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Top vendor allocation</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
@@ -204,7 +203,7 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
                         style={{
                           background: 'var(--bg-input)',
                           border: '1px solid var(--border-subtle)',
-                          borderRadius: 6,
+                          borderRadius: 4,
                           padding: '8px 12px',
                           display: 'flex',
                           justifyContent: 'space-between',
@@ -234,7 +233,7 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
               {modalTab === 'table' && (
                 <div className="panel" style={{ padding: 14 }}>
                 <div className="panel-header" style={{ marginBottom: 10 }}>
-                  <h4 style={{ margin: 0, fontSize: '0.85rem' }}>📋 Monitored Public Works in {data.district}</h4>
+                  <h4 style={{ margin: 0, fontSize: '0.85rem' }}>Monitored Public Works in {data.district}</h4>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Click any row to inspect deep diagnostic findings</span>
                 </div>
                 <div style={{ maxHeight: 280, overflowY: 'auto' }}>
@@ -283,7 +282,7 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
                                   setSelectedProjectId(p.project_id);
                                 }}
                               >
-                                Inspect 🔍
+                                Inspect
                               </button>
                             </td>
                           </tr>
@@ -310,7 +309,7 @@ export default function DistrictDetailModal({ districtName, stateName = '', onCl
             className="btn btn-primary btn-sm"
             onClick={handleNavigateToDistrictAuthority}
           >
-            🏛️ Go to Full District Authority Page
+            Go to Full District Authority Page
           </button>
           <button className="btn btn-outline btn-sm" onClick={onClose}>
             Close

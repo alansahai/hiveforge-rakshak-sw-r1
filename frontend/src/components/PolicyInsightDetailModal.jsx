@@ -80,7 +80,7 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
               {insight.finding}
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: 1.4 }}>
-              ⚡ <strong>Impact Assessment:</strong> {insight.impact}
+              <strong>Impact Assessment:</strong> {insight.impact}
             </div>
           </div>
 
@@ -88,12 +88,12 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
           {id === 'risk_distribution' && (
             <div style={{ marginBottom: 18 }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: 'var(--text-heading)' }}>
-                📊 National Risk Tier Distribution & State Hotspots
+                National Risk Tier Distribution &amp; State Hotspots
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                 {/* Risk Tier Pie */}
                 {drilldown.risk_tiers && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
                     <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
                       Portfolio Segmentation by Risk Band
                     </div>
@@ -105,7 +105,7 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
                           ))}
                         </Pie>
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '4px' }}
                           itemStyle={{ color: 'var(--text-primary)' }}
                           formatter={(v, n, p) => [`${v.toLocaleString()} works (${p.payload.pct}%)`, p.payload.tier]}
                         />
@@ -117,21 +117,21 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
 
                 {/* Top Flagged States */}
                 {drilldown.top_flagged_states && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
                     <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
                       Top States with Elevated / Critical Works
                     </div>
                     <ResponsiveContainer width="100%" height={210}>
                       <BarChart data={drilldown.top_flagged_states} layout="vertical" margin={{ left: 20, right: 15, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                        <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} />
-                        <YAxis type="category" dataKey="state" width={90} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                        <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+                        <YAxis type="category" dataKey="state" width={90} tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '4px' }}
                           itemStyle={{ color: 'var(--text-primary)' }}
                           formatter={(v) => [`${v} critical works`, 'Volume']}
                         />
-                        <Bar dataKey="flagged_count" fill="#ef4444" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="flagged_count" fill="#DC2626" radius={[0, 4, 4, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -143,13 +143,13 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
           {id === 'contractor_concentration' && (
             <div style={{ marginBottom: 18 }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: 'var(--text-heading)' }}>
-                🏢 Market Share & Sanctioned Outlays of Top Contractors
+                Market Share &amp; Sanctioned Outlays of Top Contractors
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 12 }}>
                 {/* HHI Metric Banner */}
-                <div style={{ background: 'var(--bg-secondary)', padding: 14, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                <div style={{ background: 'var(--bg-secondary)', padding: 14, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Herfindahl-Hirschman Index (HHI)</div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#38bdf8', marginTop: 4 }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--accent-primary)', marginTop: 4 }}>
                     {drilldown.hhi_index || 48.2}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 2 }}>
@@ -159,21 +159,21 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
 
                 {/* Top Contractors Chart */}
                 {drilldown.top_contractors && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
                     <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
                       Total Sanctioned Outlay (₹ Cr)
                     </div>
                     <ResponsiveContainer width="100%" height={160}>
                       <BarChart data={drilldown.top_contractors.slice(0, 5)} margin={{ left: -10, right: 10, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                        <XAxis dataKey="contractor" tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} />
-                        <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                        <XAxis dataKey="contractor" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval={0} />
+                        <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '4px' }}
                           itemStyle={{ color: 'var(--text-primary)' }}
                           formatter={(v) => [`₹${v} Cr`, 'Sanctioned']}
                         />
-                        <Bar dataKey="total_sanctioned_cr" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="total_sanctioned_cr" fill="#0B3B60" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -185,46 +185,46 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
           {id === 'state_performance' && (
             <div style={{ marginBottom: 18 }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: 'var(--text-heading)' }}>
-                📊 Top 5 Benchmark Leaders vs Bottom 5 Lagging States
+                Top 5 Benchmark Leaders vs Bottom 5 Lagging States
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                 {drilldown.top_5_states && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.76rem', fontWeight: 600, color: '#4ade80', marginBottom: 6 }}>
-                      🌟 Best Performing States (Lowest Avg Risk)
+                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--risk-low)', marginBottom: 6 }}>
+                      Best Performing States (Lowest Avg Risk)
                     </div>
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={drilldown.top_5_states} margin={{ left: -15, right: 10, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                        <XAxis dataKey="state" tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} />
-                        <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} />
+                        <XAxis dataKey="state" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval={0} />
+                        <YAxis domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '4px' }}
                           itemStyle={{ color: 'var(--text-primary)' }}
                           formatter={(v) => [`${v}/100`, 'Avg Risk Score']}
                         />
-                        <Bar dataKey="avg_risk" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="avg_risk" fill="#15803D" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 )}
 
                 {drilldown.bottom_5_states && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontSize: '0.76rem', fontWeight: 600, color: '#f87171', marginBottom: 6 }}>
-                      ⚠️ Lagging States (Highest Avg Risk)
+                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--risk-critical)', marginBottom: 6 }}>
+                      Lagging States (Highest Avg Risk)
                     </div>
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={drilldown.bottom_5_states} margin={{ left: -15, right: 10, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                        <XAxis dataKey="state" tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} />
-                        <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} />
+                        <XAxis dataKey="state" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval={0} />
+                        <YAxis domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '4px' }}
                           itemStyle={{ color: 'var(--text-primary)' }}
                           formatter={(v) => [`${v}/100`, 'Avg Risk Score']}
                         />
-                        <Bar dataKey="avg_risk" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="avg_risk" fill="#DC2626" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -236,21 +236,21 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
           {id === 'cost_inflation' && (
             <div style={{ marginBottom: 18 }}>
               <h4 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', color: 'var(--text-heading)' }}>
-                💰 Expenditure Overrun Distribution & Excess Capital Outlay
+                Expenditure Overrun Distribution &amp; Excess Capital Outlay
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
                 {drilldown.overrun_tiers && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ background: 'var(--bg-secondary)', padding: 12, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
                     <div style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
-                      Overrun Tiers (% Expenditure > Sanctioned)
+                      Overrun Tiers (% Expenditure &gt; Sanctioned)
                     </div>
                     <ResponsiveContainer width="100%" height={190}>
                       <BarChart data={drilldown.overrun_tiers} margin={{ left: -10, right: 10, top: 5, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                        <XAxis dataKey="tier" tick={{ fill: '#94a3b8', fontSize: 9 }} interval={0} />
-                        <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                        <XAxis dataKey="tier" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} interval={0} />
+                        <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                         <Tooltip
-                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }}
+                          contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '4px' }}
                           itemStyle={{ color: 'var(--text-primary)' }}
                           formatter={(v, n, p) => [`${v.toLocaleString()} works (${p.payload.pct}%)`, 'Projects']}
                         />
@@ -264,9 +264,9 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
                   </div>
                 )}
 
-                <div style={{ background: 'var(--bg-secondary)', padding: 14, borderRadius: 8, border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div style={{ background: 'var(--bg-secondary)', padding: 14, borderRadius: 4, border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Estimated Capital Slippage</div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#ef4444', marginTop: 4 }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--risk-critical)', marginTop: 4 }}>
                     ₹{drilldown.excess_cr?.toLocaleString() || '180.5'} Cr
                   </div>
                   <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.4 }}>
@@ -282,14 +282,14 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <h4 style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-heading)' }}>
-                  📋 Forensic Sample Records ({id === 'risk_distribution' || id === 'cost_inflation' ? 'Flagged Projects' : id === 'contractor_concentration' ? 'Contractors' : 'States'})
+                  Forensic Sample Records ({id === 'risk_distribution' || id === 'cost_inflation' ? 'Flagged Projects' : id === 'contractor_concentration' ? 'Contractors' : 'States'})
                 </h4>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   Click row for instant inspection
                 </span>
               </div>
 
-              <div style={{ background: 'var(--bg-card)', borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ background: 'var(--bg-card)', borderRadius: 4, overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
                 <table className="data-table" style={{ fontSize: '0.78rem' }}>
                   <thead>
                     <tr>
@@ -336,12 +336,12 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
                                 {row.avg_risk_score}/100
                               </span>
                             </td>
-                            <td style={{ color: '#ef4444', fontWeight: 600 }}>{row.elevated_risk_count}</td>
+                            <td style={{ color: 'var(--risk-critical)', fontWeight: 600 }}>{row.elevated_risk_count}</td>
                             <td>{row.market_share_pct}%</td>
                           </>
                         ) : id === 'state_performance' ? (
                           <>
-                            <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>🚩 {row.state}</td>
+                            <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{row.state}</td>
                             <td>{row.projects}</td>
                             <td>
                               <span className={`risk-badge ${row.avg_risk_score >= 60 ? 'critical' : row.avg_risk_score >= 45 ? 'high' : 'low'}`} style={{ fontSize: '0.7rem' }}>
@@ -355,7 +355,7 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
                           </>
                         ) : (
                           <>
-                            <td style={{ fontWeight: 600, color: '#38bdf8' }}>{row.project_id}</td>
+                            <td style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>{row.project_id}</td>
                             <td>{row.category}</td>
                             <td style={{ color: 'var(--text-secondary)' }}>{row.district}, {row.state}</td>
                             <td>{formatLakh(row.amount_sanctioned)}</td>
@@ -395,9 +395,9 @@ export default function PolicyInsightDetailModal({ insight, onClose }) {
 
           {/* Actionable MoSPI Policy Directives Playbook */}
           {drilldown.policy_playbook && drilldown.policy_playbook.length > 0 && (
-            <div style={{ background: 'var(--bg-secondary)', padding: 14, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--accent-hover)', fontWeight: 700, fontSize: '0.84rem' }}>
-                <span>🛡️</span> MoSPI Policy Playbook & Recommended Vigilance Directives
+            <div style={{ background: 'var(--bg-secondary)', padding: 14, borderRadius: 4, border: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: 'var(--accent-primary)', fontWeight: 700, fontSize: '0.84rem' }}>
+                MoSPI Policy Playbook &amp; Recommended Vigilance Directives
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {drilldown.policy_playbook.map((rule, idx) => (

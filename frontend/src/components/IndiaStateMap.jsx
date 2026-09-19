@@ -365,10 +365,10 @@ export default function IndiaStateMap() {
       <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent-primary)' }}>
-            🗺️ Official Pan-India 37 States & UTs Cartographic Risk Intensity Map
+            Official Pan-India 37 States &amp; UTs Cartographic Risk Intensity Map
           </h3>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Official Survey of India boundaries across all 37 States & UTs. Scroll/drag to zoom, and drill down into any district.
+            Official Survey of India boundaries across all 37 States &amp; UTs. Scroll/drag to zoom, and drill down into any district.
           </span>
         </div>
 
@@ -377,7 +377,7 @@ export default function IndiaStateMap() {
           <input
             type="text"
             className="form-control"
-            placeholder="🔍 Search any state or UT..."
+            placeholder="Search any state or UT..."
             style={{ width: 220, fontSize: '0.78rem', padding: '5px 10px' }}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -412,7 +412,7 @@ export default function IndiaStateMap() {
               fontWeight: 600
             }}
           >
-            🇮🇳 Pan-India National Map
+            Pan-India National Map
           </button>
 
           {selectedState && (
@@ -434,7 +434,7 @@ export default function IndiaStateMap() {
                   fontWeight: 600
                 }}
               >
-                🚩 {selectedState.state}
+                {selectedState.state}
               </button>
             </>
           )}
@@ -450,7 +450,7 @@ export default function IndiaStateMap() {
                 padding: '4px 10px',
                 fontWeight: 600
               }}>
-                📍 District {selectedDistrict.district}
+                District: {selectedDistrict.district}
               </span>
             </>
           )}
@@ -463,7 +463,7 @@ export default function IndiaStateMap() {
             onClick={() => handleDrillDownToState(selectedState)}
             style={{ fontSize: '0.76rem', padding: '4px 12px' }}
           >
-            🔍 Drill Down into {selectedState.state} Districts
+            Drill Down into {selectedState.state} Districts
           </button>
         )}
         {viewMode === 'state' && (
@@ -641,7 +641,7 @@ export default function IndiaStateMap() {
                     boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
                   }}
                 >
-                  🎯
+                  ⌖
                 </button>
               )}
             </div>
@@ -915,7 +915,7 @@ export default function IndiaStateMap() {
                     </span>
                   </div>
                   <h3 style={{ margin: '6px 0 0 0', fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    📍 {selectedDistrict.district}
+                    {selectedDistrict.district}
                   </h3>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     Administered under {selectedState?.state || 'State'}
@@ -963,7 +963,7 @@ export default function IndiaStateMap() {
                   style={{ width: '100%', padding: '9px 14px', fontSize: '0.84rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   onClick={() => setActiveDistrictModal({ district: selectedDistrict.district, state: selectedState?.state })}
                 >
-                  🔍 View Detailed District Intelligence &amp; Projects
+                  View Detailed District Intelligence &amp; Projects
                 </button>
 
                 <button
@@ -971,7 +971,7 @@ export default function IndiaStateMap() {
                   style={{ width: '100%', padding: '8px 14px', fontSize: '0.8rem' }}
                   onClick={() => navigate(`/district?state=${encodeURIComponent(selectedState?.state || '')}&district=${encodeURIComponent(selectedDistrict.district)}`)}
                 >
-                  📍 Open Full District Authority Dashboard
+                  Open Full District Authority Dashboard
                 </button>
               </div>
             ) : activeFocusState ? (
@@ -997,7 +997,7 @@ export default function IndiaStateMap() {
                     </span>
                   </div>
                   <h3 style={{ margin: '6px 0 0 0', fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    🚩 {activeFocusState.state}
+                    {activeFocusState.state}
                   </h3>
                 </div>
 
@@ -1044,7 +1044,7 @@ export default function IndiaStateMap() {
                 <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 6, padding: '10px 12px', fontSize: '0.8rem' }}>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Priority Vigilance Focus:</span>
                   <div style={{ color: '#f87171', fontWeight: 700, marginTop: 2 }}>
-                    📍 District {activeFocusState.top_flagged_district || 'Regional Cluster'}
+                    District: {activeFocusState.top_flagged_district || 'Regional Cluster'}
                   </div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.74rem', marginTop: 2 }}>
                     {activeFocusState.critical_count || 0} critical alerts flagged across local implementing agencies.
@@ -1057,7 +1057,7 @@ export default function IndiaStateMap() {
                   style={{ width: '100%', padding: '10px 14px', fontSize: '0.86rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   onClick={() => handleDrillDownToState(activeFocusState)}
                 >
-                  <span>🔍</span> Drill Down into {activeFocusState.state} Districts
+                  Drill Down into {activeFocusState.state} Districts
                 </button>
 
                 {/* Go to State Authority Page */}
@@ -1066,7 +1066,7 @@ export default function IndiaStateMap() {
                   style={{ width: '100%', padding: '9px 14px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                   onClick={() => navigate(`/state?state=${encodeURIComponent(activeFocusState.state)}`)}
                 >
-                  <span>🚩</span> Open State Authority Management Page
+                  Open State Authority Management Page
                 </button>
               </div>
             ) : (
@@ -1086,12 +1086,12 @@ export default function IndiaStateMap() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
                   <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    📍 {selectedState?.state} District Risk Matrix ({stateDistricts.length})
+                    {selectedState?.state} District Risk Matrix ({stateDistricts.length})
                   </h4>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="🔍 Filter district..."
+                    placeholder="Filter district..."
                     value={districtSearch}
                     onChange={(e) => setDistrictSearch(e.target.value)}
                     style={{ width: 140, fontSize: '0.74rem', padding: '3px 8px' }}

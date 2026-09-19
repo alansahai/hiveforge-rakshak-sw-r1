@@ -43,7 +43,6 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
         <div className="modal-header" style={{ borderBottom: '1px solid var(--border-subtle)', padding: '16px 20px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '1.2rem' }}>🏗️</span>
               <h3 style={{ margin: 0, color: 'var(--text-heading)', fontSize: '1.15rem' }}>
                 {data?.contractor_name || contractorName}
               </h3>
@@ -54,7 +53,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
               )}
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: 4 }}>
-              Contractor Enterprise Dossier & Network Integrity Profile
+              Contractor Enterprise Dossier &amp; Network Integrity Profile
             </div>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
@@ -68,26 +67,25 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
             </div>
           ) : error ? (
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--risk-critical)' }}>
-              ⚠️ {error}
+              {error}
             </div>
           ) : data ? (
             <>
               {/* Concurrency / Cartel Alert Banner */}
               {data.concurrency_flag && (
                 <div style={{
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid #ef4444',
-                  borderRadius: 8,
+                  background: 'rgba(220, 38, 38, 0.08)',
+                  border: '1px solid var(--border-danger)',
+                  borderRadius: 4,
                   padding: '12px 16px',
                   marginBottom: 16,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12
                 }}>
-                  <span style={{ fontSize: '1.4rem' }}>⚡</span>
                   <div>
-                    <div style={{ color: '#f87171', fontWeight: 700, fontSize: '0.86rem' }}>
-                      Cross-District Concurrency & Vendor Concentration Alert
+                    <div style={{ color: 'var(--risk-critical)', fontWeight: 700, fontSize: '0.86rem' }}>
+                      Cross-District Concurrency &amp; Vendor Concentration Alert
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: 2 }}>
                       This vendor is executing works simultaneously across {data.districts_count} administrative districts with {data.active_projects} active project commitments. High exposure to execution delays and resource reallocation.
@@ -122,7 +120,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
                 </div>
                 <div className="stat-card" style={{ padding: 12 }}>
                   <div className="stat-label" style={{ fontSize: '0.7rem' }}>Operating Footprint</div>
-                  <div className="stat-value" style={{ fontSize: '1.2rem', color: '#a78bfa' }}>{data.districts_count}</div>
+                  <div className="stat-value" style={{ fontSize: '1.2rem', color: 'var(--accent-primary)' }}>{data.districts_count}</div>
                   <div className="stat-sub">Districts mapped</div>
                 </div>
               </div>
@@ -131,7 +129,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
               {data.operating_districts && data.operating_districts.length > 0 && (
                 <div className="panel" style={{ padding: 14, marginBottom: 18 }}>
                   <div className="panel-header" style={{ marginBottom: 10 }}>
-                    <h4 style={{ margin: 0, fontSize: '0.85rem' }}>📍 Operating Districts & Regional Footprint</h4>
+                    <h4 style={{ margin: 0, fontSize: '0.85rem' }}>Operating Districts &amp; Regional Footprint</h4>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{data.operating_districts.length} active jurisdictions</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -141,7 +139,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
                         style={{
                           background: 'var(--bg-input)',
                           border: '1px solid var(--border-subtle)',
-                          borderRadius: 6,
+                          borderRadius: 4,
                           padding: '6px 12px',
                           display: 'flex',
                           alignItems: 'center',
@@ -149,7 +147,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
                           fontSize: '0.8rem'
                         }}
                       >
-                        <strong style={{ color: '#c4b5fd' }}>{d.district}</strong>
+                        <strong style={{ color: 'var(--text-primary)' }}>{d.district}</strong>
                         {d.state && <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>({d.state})</span>}
                         <span className="risk-badge low" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
                           {d.project_count} proj
@@ -166,7 +164,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
               {/* Project Portfolio Table */}
               <div className="panel" style={{ padding: 14 }}>
                 <div className="panel-header" style={{ marginBottom: 10 }}>
-                  <h4 style={{ margin: 0, fontSize: '0.85rem' }}>📋 Managed Projects Portfolio</h4>
+                  <h4 style={{ margin: 0, fontSize: '0.85rem' }}>Managed Projects Portfolio</h4>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Click any row to inspect deep diagnostic findings</span>
                 </div>
                 <div style={{ maxHeight: 280, overflowY: 'auto' }}>
@@ -213,7 +211,7 @@ export default function ContractorDetailModal({ contractorName, state = '', onCl
                                   setSelectedProjectId(p.project_id);
                                 }}
                               >
-                                Inspect 🔍
+                                Inspect
                               </button>
                             </td>
                           </tr>

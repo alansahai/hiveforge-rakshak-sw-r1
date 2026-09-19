@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { FALLBACK_DASHBOARD_SUMMARY, FALLBACK_STATES_SUMMARY } from './offlineFallbackData';
 
 let rawApiBase = (process.env.REACT_APP_API_URL || '').trim();
 if (rawApiBase && !rawApiBase.startsWith('http://') && !rawApiBase.startsWith('https://')) {
@@ -75,10 +76,13 @@ export const fetchDemoUsers = async () => {
 export const fetchDashboardSummary = async () => {
   try {
     const res = await api.get('/api/dashboard/summary');
-    return res.data;
+    if (res.data && typeof res.data === 'object' && res.data.total_projects) {
+      return res.data;
+    }
+    return FALLBACK_DASHBOARD_SUMMARY;
   } catch (err) {
-    console.error('Dashboard summary error:', err);
-    return null;
+    console.warn('Backend server offline, using institutional demo summary:', err.message);
+    return FALLBACK_DASHBOARD_SUMMARY;
   }
 };
 
@@ -206,10 +210,13 @@ export const fetchCustomChartData = async (config) => {
 export const fetchStatesSummary = async () => {
   try {
     const res = await api.get('/api/dashboard/states-summary');
-    return res.data?.states || [];
+    if (res.data?.states && res.data.states.length > 0) {
+      return res.data.states;
+    }
+    return FALLBACK_STATES_SUMMARY;
   } catch (err) {
-    console.error('States summary error:', err);
-    return [];
+    console.warn('Backend server offline, using institutional 37 States summary:', err.message);
+    return FALLBACK_STATES_SUMMARY;
   }
 };
 

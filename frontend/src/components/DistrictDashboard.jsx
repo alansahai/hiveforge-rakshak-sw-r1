@@ -4,6 +4,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { fetchDistrictDashboard, fetchStatesAndDistricts, fetchProjects, formatCrore, formatLakh } from '../api/client';
 import ProjectDetailModal from './ProjectDetailModal';
 import RealTimeDistrictMap from './RealTimeDistrictMap';
+import {
+  IconDistrict,
+  IconInspect,
+  IconSearch,
+  IconFilter,
+  IconShieldCheck,
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconAlertOctagon,
+  IconFileText,
+  IconBuilding
+} from './common/GovIcons';
 
 // Known spelling transliterations and district aliases
 const DISTRICT_ALIASES = {
@@ -116,16 +128,13 @@ export default function DistrictDashboard() {
         let matchedDist = null;
         if (districtFromUrl) {
           const dTarget = districtFromUrl.toLowerCase().trim();
-          // 1. Exact match case-insensitive
           matchedDist = dists.find(d => d.toLowerCase() === dTarget);
-          // 2. Alias match
           if (!matchedDist) {
             const alias = DISTRICT_ALIASES[dTarget];
             if (alias) {
               matchedDist = dists.find(d => d.toLowerCase() === alias.toLowerCase() || d.toLowerCase().includes(alias.toLowerCase()));
             }
           }
-          // 3. Phonetic/consonant fuzzy match
           if (!matchedDist) {
             matchedDist = dists.find(d => matchesDistrict(d, dTarget));
           }
@@ -178,15 +187,20 @@ export default function DistrictDashboard() {
   return (
     <div>
       <div className="page-header">
-        <h2>📍 District Authority Dashboard</h2>
-        <p>Granular project milestone verification, budget tracking, contractor performance, and single project inspection</p>
+        <h2>
+          <IconDistrict size={24} color="var(--gov-navy-800)" />
+          <span>District Authority Implementation Dashboard</span>
+        </h2>
+        <p>
+          District magistrate &amp; collectorate execution oversight, budget burndown, agency performance, and on-ground project tracking
+        </p>
       </div>
 
       {/* Cascading State & District Dropdown Filters */}
-      <div className="filter-bar" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="filter-bar">
         <div style={{ minWidth: 240 }}>
-          <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>
-            1. SELECT STATE
+          <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, fontWeight: 700 }}>
+            1. STATE JURISDICTION
           </label>
           <select
             className="form-control"
@@ -200,8 +214,8 @@ export default function DistrictDashboard() {
         </div>
 
         <div style={{ minWidth: 260, flex: 1 }}>
-          <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>
-            2. SELECT DISTRICT (AUTO-POPULATED)
+          <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4, fontWeight: 700 }}>
+            2. DISTRICT COLLECTORATE / AUTHORITY
           </label>
           <select
             className="form-control"
@@ -209,7 +223,7 @@ export default function DistrictDashboard() {
             onChange={e => setSelectedDistrict(e.target.value)}
             disabled={districtsList.length === 0}
           >
-            {districtsList.length === 0 && <option value="">No districts available</option>}
+            {districtsList.length === 0 && <option value="">No districts recorded</option>}
             {districtsList.map(d => (
               <option key={d} value={d}>{d}</option>
             ))}
@@ -218,27 +232,35 @@ export default function DistrictDashboard() {
       </div>
 
       {loading || !data ? (
-        <div className="loading-container"><div className="spinner"></div> Loading {selectedDistrict} data...</div>
+        <div className="loading-container">
+          <div className="spinner" />
+          <span>Loading {selectedDistrict} administrative ledger…</span>
+        </div>
       ) : (
         <>
           {/* KPI Cards */}
           <div className="stats-grid">
             <div className="stat-card">
-              <div className="stat-label">Total Projects</div>
+              <div className="stat-label">Total Allocated Works</div>
               <div className="stat-value">{data.total_projects}</div>
               <div className="stat-sub">{selectedDistrict}, {selectedState}</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Budget Allocated</div>
+              <div className="stat-label">Total Outlay Allocated</div>
               <div className="stat-value">{formatCrore(data.budget_burndown?.allocated)}</div>
+              <div className="stat-sub">District envelope</div>
             </div>
             <div className="stat-card">
-              <div className="stat-label">Amount Spent</div>
+              <div className="stat-label">Cumulative Expenditure</div>
               <div className="stat-value">{formatCrore(data.budget_burndown?.spent)}</div>
+              <div className="stat-sub">Disbursed to date</div>
             </div>
-            <div className="stat-card" style={{ borderLeft: '3px solid var(--chart-3)' }}>
-              <div className="stat-label">Remaining Budget</div>
-              <div className="stat-value" style={{ color: 'var(--chart-3)' }}>{formatCrore(data.budget_burndown?.remaining)}</div>
+            <div className="stat-card" style={{ borderLeftColor: 'var(--gov-navy-600)' }}>
+              <div className="stat-label">Unspent Balance</div>
+              <div className="stat-value" style={{ color: 'var(--gov-navy-800)' }}>
+                {formatCrore(data.budget_burndown?.remaining)}
+              </div>
+              <div className="stat-sub">Available capital</div>
             </div>
           </div>
 
@@ -257,44 +279,75 @@ export default function DistrictDashboard() {
           <div className="grid-2">
             {/* Budget Burndown Chart */}
             <div className="panel">
-              <div className="panel-header"><h3>Budget Burndown</h3></div>
+              <div className="panel-header">
+                <h3>Fiscal Burndown Distribution</h3>
+              </div>
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={[
-                  { name: 'Allocated', value: data.budget_burndown?.allocated || 0 },
-                  { name: 'Spent', value: data.budget_burndown?.spent || 0 },
-                  { name: 'Remaining', value: data.budget_burndown?.remaining || 0 }
-                ]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
-                  <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} />
-                  <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickFormatter={v => `₹${(v / 10000000).toFixed(0)}Cr`} />
-                  <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '6px' }} itemStyle={{ color: 'var(--text-primary)' }} formatter={v => formatCrore(v)} />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]} fill="#3b82f6" />
+                <BarChart
+                  data={[
+                    { name: 'Allocated', value: data.budget_burndown?.allocated || 0 },
+                    { name: 'Disbursed', value: data.budget_burndown?.spent || 0 },
+                    { name: 'Unspent Balance', value: data.budget_burndown?.remaining || 0 }
+                  ]}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                  <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} />
+                  <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickFormatter={v => `₹${(v / 10000000).toFixed(1)}Cr`} />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-card)',
+                      borderRadius: '4px',
+                      boxShadow: 'var(--shadow-md)'
+                    }}
+                    itemStyle={{ color: 'var(--text-primary)', fontSize: '0.8rem' }}
+                    formatter={v => formatCrore(v)}
+                  />
+                  <Bar dataKey="value" radius={[2, 2, 0, 0]} fill="var(--gov-navy-800)" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             {/* Contractor Performance */}
             <div className="panel">
-              <div className="panel-header"><h3>Contractor Performance</h3></div>
-              <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+              <div className="panel-header">
+                <h3>Implementing Agency Track Record</h3>
+              </div>
+              <div className="table-responsive" style={{ maxHeight: 260 }}>
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Contractor</th>
-                      <th>Projects</th>
-                      <th>Avg Risk</th>
-                      <th>Sanctioned</th>
+                      <th>Agency / Contractor</th>
+                      <th style={{ textAlign: 'right' }}>Works</th>
+                      <th style={{ textAlign: 'center' }}>Avg Anomaly</th>
+                      <th style={{ textAlign: 'right' }}>Sanctioned Outlay</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(data.contractor_performance || []).map((c, i) => {
-                      const riskCat = c.avg_risk_score >= 70 ? 'critical' : c.avg_risk_score >= 50 ? 'high' : c.avg_risk_score >= 35 ? 'medium' : 'low';
+                      const riskCat =
+                        c.avg_risk_score >= 70
+                          ? 'critical-alert'
+                          : c.avg_risk_score >= 50
+                          ? 'high-risk'
+                          : c.avg_risk_score >= 35
+                          ? 'under-review'
+                          : 'approved';
                       return (
                         <tr key={i}>
-                          <td style={{ fontWeight: 500, maxWidth: 150 }}>{c.contractor}</td>
-                          <td>{c.project_count}</td>
-                          <td><span className={`risk-badge ${riskCat}`}>{c.avg_risk_score}</span></td>
-                          <td>{formatLakh(c.total_sanctioned)}</td>
+                          <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                            {c.contractor}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>{c.project_count}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className={`status-badge ${riskCat}`}>
+                              {c.avg_risk_score}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 500 }}>
+                            {formatLakh(c.total_sanctioned)}
+                          </td>
                         </tr>
                       );
                     })}
@@ -305,19 +358,27 @@ export default function DistrictDashboard() {
           </div>
 
           {/* Active Projects Timeline */}
-          <div className="panel" style={{ marginBottom: 20 }}>
+          <div className="panel">
             <div className="panel-header">
               <div>
-                <h3 style={{ display: 'inline-block', marginRight: 10 }}>Active Projects Timeline</h3>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Click any project row to inspect full project details
-                </span>
+                <h3>Active Works Implementation Milestones</h3>
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  Click any project row to inspect full project audit details
+                </p>
               </div>
             </div>
             <div style={{ maxHeight: 320, overflowY: 'auto' }}>
               {(data.active_projects_gantt || []).map((p, i) => {
                 const progress = p.progress_percentage || 0;
-                const riskColor = p.risk_score >= 70 ? 'var(--risk-critical)' : p.risk_score >= 50 ? 'var(--risk-high)' : p.risk_score >= 30 ? 'var(--risk-medium)' : 'var(--risk-low)';
+                const riskClass =
+                  p.risk_score >= 70
+                    ? 'critical-alert'
+                    : p.risk_score >= 50
+                    ? 'high-risk'
+                    : p.risk_score >= 30
+                    ? 'under-review'
+                    : 'approved';
+
                 return (
                   <div
                     className="gantt-row"
@@ -327,18 +388,28 @@ export default function DistrictDashboard() {
                     title="Click to view comprehensive project details"
                   >
                     <div className="gantt-label" title={p.work_description}>
-                      <span style={{ fontWeight: 600, color: 'var(--accent-primary)', fontSize: '0.75rem' }}>{p.project_id}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--gov-navy-800)', fontSize: '0.75rem' }}>
+                        {p.project_id}
+                      </span>
                       <br />
-                      <span style={{ fontSize: '0.7rem' }}>{p.work_description}</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                        {p.work_description}
+                      </span>
                     </div>
                     <div className="gantt-bar-wrap">
-                      <div className="gantt-bar" style={{ width: `${Math.max(progress, 5)}%`, background: `linear-gradient(90deg, ${riskColor}aa, ${riskColor})` }}>
+                      <div
+                        className="gantt-bar"
+                        style={{
+                          width: `${Math.max(progress, 5)}%`,
+                          background: 'var(--gov-navy-800)'
+                        }}
+                      >
                         {progress.toFixed(0)}%
                       </div>
                     </div>
-                    <div style={{ width: 60, textAlign: 'right' }}>
-                      <span className={`risk-badge ${p.risk_score >= 60 ? 'high' : 'low'}`} style={{ fontSize: '0.65rem' }}>
-                        {p.risk_score?.toFixed(0)}
+                    <div style={{ width: 85, textAlign: 'right' }}>
+                      <span className={`status-badge ${riskClass}`} style={{ fontSize: '0.68rem' }}>
+                        {p.risk_score?.toFixed(0)}/100
                       </span>
                     </div>
                   </div>
@@ -352,54 +423,84 @@ export default function DistrictDashboard() {
             <div className="panel-header" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap' }}>
                 <div>
-                  <h3 style={{ margin: 0 }}>📋 All Projects in {selectedDistrict}</h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Showing {filteredProjects.length} projects • Click any row or button to view project details
-                  </span>
+                  <h3>
+                    <IconFileText size={18} color="var(--gov-navy-800)" />
+                    <span>Works Implementation Ledger ({selectedDistrict})</span>
+                  </h3>
+                  <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                    Showing {filteredProjects.length} of {allDistrictProjects.length} registered works
+                  </p>
                 </div>
 
                 {/* Risk Filter Buttons */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'all' ? 'btn-primary' : 'btn-outline'} btn-sm`}
                     onClick={() => setRiskFilter('all')}
                   >
                     All ({allDistrictProjects.length})
                   </button>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'low' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'low' ? { background: 'var(--risk-low)', borderColor: 'var(--risk-low)' } : { color: 'var(--risk-low)' }}
+                    style={
+                      riskFilter === 'low'
+                        ? { background: 'var(--status-approved-bg)', color: 'var(--status-approved-text)', borderColor: 'var(--status-approved-border)' }
+                        : { color: 'var(--status-approved-text)' }
+                    }
                     onClick={() => setRiskFilter('low')}
                   >
-                    🟢 Safe / Low
+                    <IconCheckCircle size={12} />
+                    <span>Approved / Low</span>
                   </button>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'medium' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'medium' ? { background: 'var(--risk-medium)', borderColor: 'var(--risk-medium)' } : { color: 'var(--risk-medium)' }}
+                    style={
+                      riskFilter === 'medium'
+                        ? { background: 'var(--status-review-bg)', color: 'var(--status-review-text)', borderColor: 'var(--status-review-border)' }
+                        : { color: 'var(--status-review-text)' }
+                    }
                     onClick={() => setRiskFilter('medium')}
                   >
-                    🟡 Medium
+                    <IconShieldCheck size={12} />
+                    <span>Under Review</span>
                   </button>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'high' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'high' ? { background: 'var(--risk-high)', borderColor: 'var(--risk-high)' } : { color: 'var(--risk-high)' }}
+                    style={
+                      riskFilter === 'high'
+                        ? { background: 'var(--status-escalated-bg)', color: 'var(--status-escalated-text)', borderColor: 'var(--status-escalated-border)' }
+                        : { color: 'var(--status-escalated-text)' }
+                    }
                     onClick={() => setRiskFilter('high')}
                   >
-                    🟠 High
+                    <IconAlertTriangle size={12} />
+                    <span>Audit Escalation</span>
                   </button>
                   <button
+                    type="button"
                     className={`btn ${riskFilter === 'critical' ? 'btn-primary' : 'btn-outline'} btn-sm`}
-                    style={riskFilter === 'critical' ? { background: 'var(--risk-critical)', borderColor: 'var(--risk-critical)' } : { color: 'var(--risk-critical)' }}
+                    style={
+                      riskFilter === 'critical'
+                        ? { background: 'var(--status-critical-bg)', color: 'var(--status-critical-text)', borderColor: 'var(--status-critical-border)' }
+                        : { color: 'var(--status-critical-text)' }
+                    }
                     onClick={() => setRiskFilter('critical')}
                   >
-                    🔴 Critical
+                    <IconAlertOctagon size={12} />
+                    <span>Critical Inquiry</span>
                   </button>
                 </div>
               </div>
 
               {/* Date-Range Filter Control */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '8px 12px', background: 'var(--bg-input)', borderRadius: 6, width: '100%' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>📅 Sanction Date Range:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '10px 14px', background: 'var(--bg-secondary)', borderRadius: 4, width: '100%' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  Sanction Date Window:
+                </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>From:</label>
                   <input
@@ -422,46 +523,49 @@ export default function DistrictDashboard() {
                 </div>
                 {(startDate || endDate) && (
                   <button
+                    type="button"
                     className="btn btn-outline btn-sm"
                     style={{ fontSize: '0.72rem', padding: '2px 8px' }}
                     onClick={() => { setStartDate(''); setEndDate(''); }}
                   >
-                    Clear Dates ✕
+                    Clear Filter ✕
                   </button>
-                )}
-                {(startDate || endDate) && (
-                  <span style={{ fontSize: '0.74rem', color: 'var(--accent-hover)' }}>
-                    Filtering {filteredProjects.length} projects within selected date window
-                  </span>
                 )}
               </div>
             </div>
 
             {filteredProjects.length === 0 ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>
-                No projects found in {selectedDistrict} with matching filters {startDate || endDate ? `between ${startDate || 'beginning'} and ${endDate || 'present'}` : ''}.
+                No projects found in {selectedDistrict} with matching filters.
               </div>
             ) : (
-              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+              <div className="table-responsive" style={{ maxHeight: 420 }}>
                 <table className="data-table">
                   <thead>
                     <tr>
                       <th>Project ID</th>
                       <th>Sanction Date</th>
-                      <th>Work Scope</th>
+                      <th>Work Description</th>
                       <th>Category</th>
-                      <th>Sanctioned</th>
-                      <th>Spent</th>
-                      <th>Progress</th>
-                      <th>Risk Score</th>
-                      <th>Contractor</th>
-                      <th>Action</th>
+                      <th style={{ textAlign: 'right' }}>Sanctioned (₹)</th>
+                      <th style={{ textAlign: 'right' }}>Spent (₹)</th>
+                      <th style={{ textAlign: 'center' }}>Progress</th>
+                      <th style={{ textAlign: 'center' }}>Anomaly Score</th>
+                      <th>Agency</th>
+                      <th style={{ textAlign: 'center' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredProjects.map((p, idx) => {
                       const pScore = p.risk_score || 0;
-                      const pCat = (p.risk_category || (pScore >= 80 ? 'critical' : pScore >= 60 ? 'high' : pScore >= 40 ? 'medium' : 'low')).toLowerCase();
+                      const statusClass =
+                        pScore >= 80
+                          ? 'critical-alert'
+                          : pScore >= 60
+                          ? 'high-risk'
+                          : pScore >= 40
+                          ? 'under-review'
+                          : 'approved';
                       const pProgress = p.progress_percentage || 0;
 
                       return (
@@ -471,11 +575,14 @@ export default function DistrictDashboard() {
                           style={{ cursor: 'pointer' }}
                           title="Click to view full project breakdown"
                         >
-                          <td style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
+                          <td style={{ fontWeight: 700, color: 'var(--gov-navy-800)' }}>
                             {p.project_id}
                             {p.geo_duplicate_flag === 1 && (
-                              <span className="risk-badge" style={{ marginLeft: 6, background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontSize: '0.68rem', padding: '1px 5px' }}>
-                                🌐 Geo-Dup
+                              <span
+                                className="status-badge critical-alert"
+                                style={{ marginLeft: 6, fontSize: '0.65rem', padding: '1px 5px' }}
+                              >
+                                Geo-Dup
                               </span>
                             )}
                           </td>
@@ -483,43 +590,40 @@ export default function DistrictDashboard() {
                             {p.approval_date || 'N/A'}
                           </td>
                           <td style={{ maxWidth: 220, whiteSpace: 'normal', fontSize: '0.82rem' }}>
-                            {p.work_description || 'MPLADS project'}
-                          </td>
-                          <td><span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{p.category}</span></td>
-                          <td>{formatLakh(p.amount_sanctioned)}</td>
-                          <td>{formatLakh(p.amount_spent)}</td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div className="progress-bar-container" style={{ width: 45, height: 6 }}>
-                                <div
-                                  className="progress-bar-fill"
-                                  style={{
-                                    width: `${Math.min(pProgress, 100)}%`,
-                                    background: pProgress >= 95 ? 'var(--risk-low)' : 'var(--accent-primary)'
-                                  }}
-                                />
-                              </div>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{pProgress.toFixed(0)}%</span>
-                            </div>
+                            {p.work_description || 'MPLADS work'}
                           </td>
                           <td>
-                            <span className={`risk-badge ${pCat}`}>
+                            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                              {p.category}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatLakh(p.amount_sanctioned)}</td>
+                          <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatLakh(p.amount_spent)}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                              {pProgress.toFixed(0)}%
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className={`status-badge ${statusClass}`}>
                               {pScore.toFixed(0)}/100
                             </span>
                           </td>
-                          <td style={{ maxWidth: 130, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          <td style={{ maxWidth: 140, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                             {p.contractor || 'State Agency'}
                           </td>
-                          <td>
+                          <td style={{ textAlign: 'center' }}>
                             <button
+                              type="button"
                               className="btn btn-outline btn-sm"
-                              style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                              style={{ padding: '2px 8px', fontSize: '0.72rem' }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedProject(p);
                               }}
                             >
-                              Details 🔍
+                              <IconInspect size={12} />
+                              <span>Inspect</span>
                             </button>
                           </td>
                         </tr>
