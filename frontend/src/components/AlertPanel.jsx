@@ -484,6 +484,7 @@ function AlertCard({ alert, onClick }) {
 export default function AlertPanel() {
   const [allAlerts, setAllAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState(null);
   const [severityFilter, setSeverityFilter] = useState('');
   const [stateFilter, setStateFilter] = useState('');
@@ -500,6 +501,7 @@ export default function AlertPanel() {
 
   const loadAlerts = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const data = await fetchLifecycleAlerts({
         status: statusFilter,
@@ -507,8 +509,9 @@ export default function AlertPanel() {
         state: stateFilter || undefined,
       });
       setAllAlerts(data.alerts || []);
-    } catch {
-      setAllAlerts([]);
+    } catch (err) {
+      console.error('Failed to load alerts:', err);
+      setError('Unable to retrieve alerts from the central ledger. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -664,6 +667,13 @@ export default function AlertPanel() {
           <div className="loading-container">
             <div className="spinner" />
             <span>Scanning central anomaly ledger…</span>
+          </div>
+        ) : error ? (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
+            <p style={{ color: 'var(--status-critical-text)', marginBottom: 12 }}>{error}</p>
+            <button className="btn btn-outline btn-sm" onClick={loadAlerts}>
+              Retry Scanning
+            </button>
           </div>
         ) : displayedAlerts.length === 0 ? (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>

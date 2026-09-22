@@ -202,10 +202,10 @@ export default function ProjectDetailModal({ project, projectId, onClose }) {
             <div className="panel" style={{ padding: 16, marginBottom: 14, border: '1px solid var(--border-card)', background: 'var(--bg-card)' }}>
               <div className="panel-header" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h4 style={{ margin: 0, fontSize: '0.92rem', color: 'var(--text-heading)' }}>
-                  AI Diagnostic Signals &amp; Explainable Risk Factors (XAI)
+                  Project Risk Assessment Details &amp; Diagnostic Signals
                 </h4>
                 <span style={{ fontSize: '0.74rem', background: 'var(--accent-primary-glow)', color: 'var(--accent-primary)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>
-                  Ensemble ML &amp; Spatial Analysis
+                  Risk Analysis &amp; Spatial Verification
                 </span>
               </div>
 
@@ -311,11 +311,11 @@ export default function ProjectDetailModal({ project, projectId, onClose }) {
                 </div>
               </div>
 
-              {/* 3. SHAP-style Explainable AI Feature Contribution Waterfall */}
+              {/* 3. Reasoning Behind Risk Flags & Factor Contribution Waterfall */}
               {data.xai_breakdown && (
                 <div style={{ background: 'var(--bg-input)', borderRadius: 4, padding: 12, marginBottom: 14, border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-                    <span>XAI Feature Contribution Breakdown (Risk Attribution)</span>
+                    <span>Reasoning Behind Risk Flags</span>
                     <span style={{ color: 'var(--text-secondary)' }}>Score Impact</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

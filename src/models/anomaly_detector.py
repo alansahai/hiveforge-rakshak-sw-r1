@@ -228,9 +228,6 @@ def score_anomalies(df_features: pd.DataFrame, models_dir: Path = MODELS_DIR) ->
     with open(iso_path, "rb") as f:
         iso_meta = pickle.load(f)
         
-    torch, nn, _ = get_torch_and_autoencoder()
-    ae_payload = torch.load(ae_path, map_location=torch.device("cpu"), weights_only=False)
-    
     features = iso_meta['features']
     
     # Ensure all required features are present
@@ -264,34 +261,43 @@ def score_anomalies(df_features: pd.DataFrame, models_dir: Path = MODELS_DIR) ->
         )
     )
     iso_flag = iso_scores > 0.60
-    
-    # 2. Autoencoder reconstruction score
-    input_dim = ae_payload['input_dim']
-    autoencoder = PyTorchAutoencoder(input_dim)
-    autoencoder.load_state_dict(ae_payload['state_dict'])
-    autoencoder.eval()
-    
-    with torch.no_grad():
-        x_tensor = torch.tensor(X, dtype=torch.float32)
-        recon = autoencoder(x_tensor)
-        ae_errors = torch.mean((x_tensor - recon) ** 2, dim=1).numpy()
+
+    # 2. Autoencoder reconstruction score (with graceful fallback if PyTorch is restricted or unavailable)
+    ae_scores = None
+    ae_flag = None
+    try:
+        torch, nn, _ = get_torch_and_autoencoder()
+        ae_payload = torch.load(ae_path, map_location=torch.device("cpu"), weights_only=False)
+        input_dim = ae_payload['input_dim']
+        autoencoder = PyTorchAutoencoder(input_dim)
+        autoencoder.load_state_dict(ae_payload['state_dict'])
+        autoencoder.eval()
         
-    th = ae_payload['threshold']
-    error_mean = ae_payload.get('error_mean', th * 0.4)
-    
-    # Normal projects (error <= error_mean) map to [0.05, 0.20]
-    # Elevated error (error_mean to th) maps to [0.20, 0.55]
-    # Outlier reconstruction (> th) maps to [0.55, 1.00]
-    ae_scores = np.where(
-        ae_errors <= error_mean,
-        0.05 + np.clip((ae_errors / (error_mean + 1e-6)) * 0.15, 0.0, 0.15),
-        np.where(
-            ae_errors <= th,
-            0.20 + np.clip((ae_errors - error_mean) / (th - error_mean + 1e-6) * 0.35, 0.0, 0.35),
-            0.55 + np.clip((ae_errors - th) / (th * 0.75 + 1e-6) * 0.45, 0.0, 0.45)
+        with torch.no_grad():
+            x_tensor = torch.tensor(X, dtype=torch.float32)
+            recon = autoencoder(x_tensor)
+            ae_errors = torch.mean((x_tensor - recon) ** 2, dim=1).numpy()
+            
+        th = ae_payload['threshold']
+        error_mean = ae_payload.get('error_mean', th * 0.4)
+        
+        # Normal projects (error <= error_mean) map to [0.05, 0.20]
+        # Elevated error (error_mean to th) maps to [0.20, 0.55]
+        # Outlier reconstruction (> th) maps to [0.55, 1.00]
+        ae_scores = np.where(
+            ae_errors <= error_mean,
+            0.05 + np.clip((ae_errors / (error_mean + 1e-6)) * 0.15, 0.0, 0.15),
+            np.where(
+                ae_errors <= th,
+                0.20 + np.clip((ae_errors - error_mean) / (th - error_mean + 1e-6) * 0.35, 0.0, 0.35),
+                0.55 + np.clip((ae_errors - th) / (th * 0.75 + 1e-6) * 0.45, 0.0, 0.45)
+            )
         )
-    )
-    ae_flag = ae_errors > th
+        ae_flag = ae_errors > th
+    except Exception as ae_err:
+        logger.debug(f"Autoencoder inference bypassed: {ae_err}; falling back to calibrated Isolation Forest.")
+        ae_scores = iso_scores.copy()
+        ae_flag = iso_flag.copy()
     
     # 3. Calibrated Ensemble
     combined_score = np.clip(0.60 * iso_scores + 0.40 * ae_scores, 0.0, 1.0)

@@ -1,7 +1,10 @@
 import React from 'react';
-import { GovSealIcon, IconShieldCheck, IconExternalLink } from './GovIcons';
+import { GovSealIcon, IconShieldCheck } from './GovIcons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function GovFooter() {
+  const { language, t } = useLanguage();
+
   return (
     <footer className="gov-footer" role="contentinfo">
       {/* ── Top Tricolor Accent Line ── */}
@@ -18,39 +21,45 @@ export default function GovFooter() {
             <div className="gov-footer-brand">
               <GovSealIcon size={34} />
               <div>
-                <h4 className="gov-footer-title">MPLADS Project Monitoring System</h4>
-                <p className="gov-footer-subtitle">सांसद स्थानीय क्षेत्र विकास योजना — निगरानी प्रणाली</p>
+                <h4 className="gov-footer-title">
+                  {t('portal_title')}
+                </h4>
+                <p className="gov-footer-subtitle">
+                  {t('mospi_name')}
+                </p>
               </div>
             </div>
             <p className="gov-footer-desc">
-              An intelligent public expenditure analytics platform engineered to provide real-time
-              anomaly detection, contractor nexus discovery, timeline overrun forecasting, and geo-spatial
-              duplicate tracking for parliamentary constituency projects.
+              {language === 'hi'
+                ? 'संसदीय निर्वाचन क्षेत्र विकास योजना (एमपीलैड्स) कार्यों की वास्तविक समय पर निगरानी, निधि प्रवाह और पारदर्शिता सुनिश्चित करने हेतु आधिकारिक पोर्टल।'
+                : 'A public expenditure assurance platform engineered for real-time fund tracking, physical milestone verification, and transparency across parliamentary constituency works.'}
             </p>
           </div>
 
           {/* Column 2: Governance & Reference Links */}
           <div className="gov-footer-col">
-            <h4 className="gov-footer-heading">Statutory &amp; Scheme References</h4>
+            <h4 className="gov-footer-heading">
+              {language === 'hi' ? 'वैधानिक एवं योजना संदर्भ' : 'Statutory & Scheme References'}
+            </h4>
             <ul className="gov-footer-links">
               <li>
-                <a href="#guidelines" onClick={(e) => e.preventDefault()} title="Revised MPLADS Guidelines">
-                  Revised Scheme Guidelines (Feb 2023)
+                <a href="#guidelines" onClick={(e) => e.preventDefault()} title="Revised Scheme Guidelines">
+                  {language === 'hi' ? 'संशोधित योजना दिशानिर्देश (2023)' : 'Revised Scheme Guidelines (Feb 2023)'}
                 </a>
               </li>
               <li>
-                <a href="#rti" onClick={(e) => e.preventDefault()} title="Proactive Disclosures under RTI Act">
-                  RTI Act Section 4(1)(b) Proactive Disclosures
+                <a href="#rti" onClick={(e) => e.preventDefault()} title="RTI Proactive Disclosures">
+                  {language === 'hi' ? 'आरटीआई अधिनियम धारा 4(1)(b) स्वतः प्रकटीकरण' : 'RTI Act Section 4(1)(b) Proactive Disclosures'}
                 </a>
               </li>
               <li>
                 <a href="#grievance" onClick={(e) => e.preventDefault()} title="Citizen Grievance Redressal">
-                  Public Grievance Redressal Mechanism
+                  {language === 'hi' ? 'लोक शिकायत निवारण प्रणाली' : 'Public Grievance Redressal Mechanism'}
                 </a>
               </li>
               <li>
-                <a href="#audit" onClick={(e) => e.preventDefault()} title="Audit and Comptroller Standards">
-                  CAG Administrative &amp; Expenditure Audit Norms
+                <a href="#audit" onClick={(e) => e.preventDefault()} title="CAG Audit Norms">
+                  {language === 'hi' ? 'कैग (CAG) प्रशासनिक एवं व्यय लेखा परीक्षा मानक' : 'CAG Administrative & Expenditure Audit Norms'}
                 </a>
               </li>
             </ul>
@@ -58,28 +67,30 @@ export default function GovFooter() {
 
           {/* Column 3: Platform Standards & Accessibility */}
           <div className="gov-footer-col">
-            <h4 className="gov-footer-heading">Compliance &amp; Accessibility</h4>
+            <h4 className="gov-footer-heading">
+              {language === 'hi' ? 'प्रणाली मानक एवं अनुपालन' : 'System Standards & Coverage'}
+            </h4>
             <ul className="gov-footer-links">
               <li>
                 <span className="gov-badge-compliance">
                   <IconShieldCheck size={14} color="#166534" />
-                  <span>GIGW 3.0 Compliant (Level AA)</span>
+                  <span>{language === 'hi' ? 'अखिल भारतीय निगरानी कवरेज' : 'Pan-India Monitoring Ledger'}</span>
                 </span>
               </li>
               <li>
                 <span className="gov-badge-compliance">
                   <IconShieldCheck size={14} color="#166534" />
-                  <span>WCAG 2.1 Contrast Accessible</span>
+                  <span>{language === 'hi' ? 'सुलभता एवं कंट्रास्ट अनुपालित' : 'High Contrast Accessible Design'}</span>
                 </span>
               </li>
               <li>
                 <span className="gov-footer-meta-item">
-                  Platform Release: <strong>v2.4.0-SIH (Stable)</strong>
+                  {language === 'hi' ? 'प्लेटफ़ॉर्म संस्करण:' : 'Platform Build:'} <strong>v2.4.0 (Stable)</strong>
                 </span>
               </li>
               <li>
                 <span className="gov-footer-meta-item">
-                  Data Pipeline: <strong>98K+ Project Ledger Verified</strong>
+                  {language === 'hi' ? 'परियोजना डेटा:' : 'Data Scope:'} <strong>98K+ Works Monitored</strong>
                 </span>
               </li>
             </ul>
@@ -89,20 +100,18 @@ export default function GovFooter() {
         {/* ── Public Service Oversight Notice ── */}
         <div className="gov-footer-disclaimer-box">
           <p className="gov-disclaimer-text">
-            <strong>Public Service Oversight Notice:</strong> This digital analytics platform utilizes open MPLADS datasets
-            and verified administrative records to provide AI-assisted fund oversight, expenditure tracking, contractor risk discovery,
-            and duplicate detection for parliamentary constituencies.
+            <strong>{language === 'hi' ? 'सार्वजनिक सेवा सूचना:' : 'Public Service Oversight Notice:'}</strong>{' '}
+            {t('footer_disclaimer')}
           </p>
         </div>
 
         {/* ── Bottom Strip ── */}
         <div className="gov-footer-bottom">
           <div className="gov-footer-copy">
-            © 2026 MPLADS Project Monitoring &amp; Anomaly Detection Portal.
-            Designed for Citizen Transparency &amp; Public Accountability.
+            {t('footer_copyright')}
           </div>
           <div className="gov-footer-time-stamp">
-            Last System Ledger Refresh: 19 September 2026 · All Rights Reserved
+            {language === 'hi' ? 'अंतिम डेटा अद्यतन: 2026 · सर्वाधिकार सुरक्षित' : 'Last Ledger Refresh: September 2026 · All Rights Reserved'}
           </div>
         </div>
       </div>

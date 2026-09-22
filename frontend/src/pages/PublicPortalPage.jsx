@@ -22,9 +22,11 @@ import {
   IconCheckCircle
 } from '../components/common/GovIcons';
 import { isAuthenticated, getCurrentRole } from '../api/client';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function PublicPortalPage() {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
   const [theme, setTheme] = useState(() => localStorage.getItem('mplads_theme') || 'light');
   const loggedIn = isAuthenticated();
   const userRole = getCurrentRole();
@@ -55,20 +57,15 @@ export default function PublicPortalPage() {
           <div className="gov-container public-hero-inner">
             <div className="public-hero-badge">
               <GovSealIcon size={26} />
-              <span>Ministry of Statistics &amp; Programme Implementation (MoSPI) · Government of India</span>
+              <span>{t('mospi_name')} · {t('gov_title')}</span>
             </div>
 
             <h1 className="public-hero-title">
-              MPLADS Project Monitoring &amp; Anomaly Detection System
+              {t('hero_title')}
             </h1>
-            <p className="public-hero-hi">
-              सांसद स्थानीय क्षेत्र विकास योजना — राष्ट्रीय निगरानी एवं पारदर्शी व्यय लेखा प्रणाली
-            </p>
 
             <p className="public-hero-lead">
-              A state-of-the-art public expenditure governance platform engineered with artificial
-              intelligence to deliver real-time anomaly detection, contractor nexus discovery,
-              geo-spatial duplicate tracking, and automated audit trails across all 543 Parliamentary Constituencies.
+              {t('hero_subtitle')}
             </p>
 
             <div className="public-hero-actions">
@@ -80,7 +77,7 @@ export default function PublicPortalPage() {
                   id="btn-public-login"
                 >
                   <IconLock size={18} />
-                  <span>Access Authorized Portal / अधिकारी लॉगिन</span>
+                  <span>{t('sign_in')}</span>
                   <IconArrowRight size={16} />
                 </button>
               ) : (
@@ -90,37 +87,14 @@ export default function PublicPortalPage() {
                   onClick={() => navigate(`/${userRole || 'overview'}`)}
                   id="btn-public-dashboard"
                 >
-                  <span>Go to My Dashboard / डैशबोर्ड पर जाएं</span>
+                  <span>{t('dashboard')}</span>
                   <IconArrowRight size={16} />
                 </button>
               )}
 
               <a href="#telemetry" className="btn btn-outline public-explore-btn">
-                <span>Explore National Telemetry / राष्ट्रीय आंकड़े</span>
+                <span>{language === 'hi' ? 'राष्ट्रीय संकेतक देखें' : 'Explore National Telemetry'}</span>
               </a>
-            </div>
-
-            {/* Statutory Compliance Badges */}
-            <div className="public-trust-strip">
-              <span className="trust-item">
-                <IconShieldCheck size={16} color="#166534" />
-                <span>GIGW 3.0 Standard</span>
-              </span>
-              <span className="trust-divider" aria-hidden="true">·</span>
-              <span className="trust-item">
-                <IconShieldCheck size={16} color="#166534" />
-                <span>CAG Audit Compliant</span>
-              </span>
-              <span className="trust-divider" aria-hidden="true">·</span>
-              <span className="trust-item">
-                <IconShieldCheck size={16} color="#166534" />
-                <span>Revised 2023 Guidelines</span>
-              </span>
-              <span className="trust-divider" aria-hidden="true">·</span>
-              <span className="trust-item">
-                <IconShieldCheck size={16} color="#166534" />
-                <span>Multi-Model AI Surveillance</span>
-              </span>
             </div>
           </div>
         </section>
@@ -342,14 +316,17 @@ export default function PublicPortalPage() {
                   </div>
                   <span className="pillar-number">Pillar 04</span>
                 </div>
-                <h3 className="pillar-title">Explainable AI &amp; SHAP Dossiers</h3>
+                <h3 className="pillar-title">
+                  {language === 'hi' ? 'पारदर्शी ऑडिट एवं स्पष्ट जोखिम कारण' : 'Transparent Audit & Reasoned Risk Attribution'}
+                </h3>
                 <p className="pillar-desc">
-                  Zero "black box" decisions. Every risk score is accompanied by exact <strong>SHAP (Shapley Additive exPlanations)</strong> feature
-                  contributions, translating complex machine learning outputs into legally admissible, transparent audit justifications.
+                  {language === 'hi'
+                    ? 'प्रत्येक जोखिम मूल्यांकन के साथ स्पष्ट प्रशासनिक और प्रगति कारकों का विवरण, जो नोडल अधिकारियों को पारदर्शी निर्णय लेने में सक्षम बनाता है।'
+                    : 'Zero unverified decisions. Every risk evaluation is accompanied by explicit administrative feature contributions, translating anomaly indicators into transparent, structured audit justifications for nodal officers.'}
                 </p>
                 <div className="pillar-footer">
-                  <span className="pillar-tag">Statutory Admissibility</span>
-                  <span className="pillar-tag">RTI Proactive Compliance</span>
+                  <span className="pillar-tag">Audit Trail</span>
+                  <span className="pillar-tag">Administrative Transparency</span>
                 </div>
               </div>
             </div>
@@ -360,10 +337,16 @@ export default function PublicPortalPage() {
         <section className="public-section public-roles-section">
           <div className="gov-container">
             <div className="section-title-wrap">
-              <span className="section-eyebrow">Administrative Hierarchy</span>
-              <h2 className="section-title">Role-Based Governance Portals</h2>
+              <span className="section-eyebrow">
+                {language === 'hi' ? 'प्रशासनिक पदानुक्रम' : 'Administrative Hierarchy'}
+              </span>
+              <h2 className="section-title">
+                {language === 'hi' ? 'भूमिका-आधारित शासन पोर्टल' : 'Role-Based Governance Portals'}
+              </h2>
               <p className="section-subtitle">
-                Dedicated interfaces tailored to the statutory responsibilities of each level of government administration.
+                {language === 'hi'
+                  ? 'सरकारी प्रशासन के प्रत्येक स्तर के वैधानिक दायित्वों के अनुरूप समर्पित डैशबोर्ड।'
+                  : 'Dedicated interfaces tailored to the statutory responsibilities of each level of government administration.'}
               </p>
             </div>
 
@@ -376,8 +359,9 @@ export default function PublicPortalPage() {
                   </div>
                   <div>
                     <span className="role-tier">Constituency Tier</span>
-                    <h3 className="role-name">Member of Parliament</h3>
-                    <div className="role-name-hi">सांसद (लोकसभा / राज्यसभा)</div>
+                    <h3 className="role-name">
+                      {language === 'hi' ? 'सांसद (लोकसभा / राज्यसभा)' : 'Member of Parliament (MP)'}
+                    </h3>
                   </div>
                 </div>
                 <p className="role-card-desc">
@@ -394,7 +378,7 @@ export default function PublicPortalPage() {
                   onClick={() => handleRoleSelect('mp')}
                 >
                   <IconLock size={14} />
-                  <span>Sign In as MP / सांसद लॉगिन</span>
+                  <span>{language === 'hi' ? 'सांसद पोर्टल लॉगिन' : 'Sign In as MP'}</span>
                   <IconArrowRight size={14} />
                 </button>
               </div>
@@ -407,8 +391,9 @@ export default function PublicPortalPage() {
                   </div>
                   <div>
                     <span className="role-tier">Implementation Tier</span>
-                    <h3 className="role-name">District Authority (DM / DC)</h3>
-                    <div className="role-name-hi">जिला मजिस्ट्रेट / उपायुक्त</div>
+                    <h3 className="role-name">
+                      {language === 'hi' ? 'जिला मजिस्ट्रेट / उपायुक्त' : 'District Authority (DM / DC)'}
+                    </h3>
                   </div>
                 </div>
                 <p className="role-card-desc">
@@ -425,7 +410,7 @@ export default function PublicPortalPage() {
                   onClick={() => handleRoleSelect('district')}
                 >
                   <IconLock size={14} />
-                  <span>Sign In as District Authority / जिला लॉगिन</span>
+                  <span>{language === 'hi' ? 'जिला प्राधिकरण लॉगिन' : 'Sign In as District Authority'}</span>
                   <IconArrowRight size={14} />
                 </button>
               </div>
@@ -438,8 +423,9 @@ export default function PublicPortalPage() {
                   </div>
                   <div>
                     <span className="role-tier">State Level Tier</span>
-                    <h3 className="role-name">State Nodal Officer</h3>
-                    <div className="role-name-hi">राज्य नोडल विभाग</div>
+                    <h3 className="role-name">
+                      {language === 'hi' ? 'राज्य नोडल विभाग' : 'State Nodal Officer'}
+                    </h3>
                   </div>
                 </div>
                 <p className="role-card-desc">
@@ -456,7 +442,7 @@ export default function PublicPortalPage() {
                   onClick={() => handleRoleSelect('state')}
                 >
                   <IconLock size={14} />
-                  <span>Sign In as State Nodal / राज्य नोडल लॉगिन</span>
+                  <span>{language === 'hi' ? 'राज्य नोडल लॉगिन' : 'Sign In as State Nodal'}</span>
                   <IconArrowRight size={14} />
                 </button>
               </div>
@@ -469,8 +455,9 @@ export default function PublicPortalPage() {
                   </div>
                   <div>
                     <span className="role-tier">National Oversight Tier</span>
-                    <h3 className="role-name">Ministry Official (MoSPI)</h3>
-                    <div className="role-name-hi">सांख्यिकी एवं कार्यक्रम कार्यान्वयन मंत्रालय</div>
+                    <h3 className="role-name">
+                      {language === 'hi' ? 'सांख्यिकी एवं कार्यक्रम कार्यान्वयन मंत्रालय' : 'Ministry Official (MoSPI)'}
+                    </h3>
                   </div>
                 </div>
                 <p className="role-card-desc">
@@ -487,7 +474,7 @@ export default function PublicPortalPage() {
                   onClick={() => handleRoleSelect('ministry')}
                 >
                   <IconLock size={14} />
-                  <span>Sign In as Ministry Official / मंत्रालय लॉगिन</span>
+                  <span>{language === 'hi' ? 'मंत्रालय अधिकारी लॉगिन' : 'Sign In as Ministry Official'}</span>
                   <IconArrowRight size={14} />
                 </button>
               </div>
@@ -525,9 +512,9 @@ export default function PublicPortalPage() {
 
               <div className="step-card">
                 <div className="step-num">Step 3</div>
-                <h4 className="step-title">AI Scrutiny &amp; Risk Scoring</h4>
+                <h4 className="step-title">Appraisal &amp; Risk Scoring</h4>
                 <p className="step-desc">
-                  Multi-model ensemble scans for cost inflation, contractor collusion, and duplicate spatial footprints, assigning a 0-100 risk score.
+                  Multi-factor risk appraisal scans for cost inflation, contractor concentration, and duplicate spatial footprints, assigning a 0-100 score.
                 </p>
               </div>
 
@@ -535,7 +522,7 @@ export default function PublicPortalPage() {
                 <div className="step-num">Step 4</div>
                 <h4 className="step-title">Administrative Audit &amp; Resolution</h4>
                 <p className="step-desc">
-                  High-risk items trigger automated audit inquiries and site inspections before fund disbursements are authorized.
+                  Flagged items trigger automated audit inquiries and site inspections before fund disbursements are authorized.
                 </p>
               </div>
             </div>
@@ -558,7 +545,7 @@ export default function PublicPortalPage() {
                 onClick={() => navigate('/login')}
               >
                 <IconLock size={18} />
-                <span>Official Login / अधिकारी लॉगिन</span>
+                <span>{t('sign_in')}</span>
               </button>
             </div>
           </div>

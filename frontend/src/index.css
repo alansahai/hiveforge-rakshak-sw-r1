@@ -357,6 +357,46 @@ body {
   border-color: var(--gov-navy-800);
 }
 
+/* Language Switcher Toggle (EN | हिंदी) */
+.gov-lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  padding: 2px 4px;
+}
+
+.gov-lang-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 7px;
+  border-radius: 2px;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.gov-lang-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.gov-lang-btn.active {
+  background: var(--accent-primary);
+  color: #FFFFFF;
+}
+
+.gov-lang-divider {
+  color: var(--border-card);
+  font-size: 0.7rem;
+  user-select: none;
+}
+
 /* ===== GOVERNMENT MASTHEAD ===== */
 .gov-masthead {
   background-color: #FFFFFF;
@@ -1999,7 +2039,7 @@ select.form-control {
   min-height: 100vh;
   display: flex;
   align-items: stretch;
-  background: #F1F5F9;
+  background: var(--bg-primary);
 }
 
 .login-container {
@@ -2096,8 +2136,33 @@ select.form-control {
   flex-direction: column;
   justify-content: center;
   padding: 48px 44px;
-  background: #FFFFFF;
+  background: var(--bg-card);
   box-shadow: var(--shadow-lg);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.login-back-bar {
+  margin-bottom: 16px;
+}
+
+.login-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  transition: color var(--transition-fast);
+}
+
+.login-back-btn:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
 }
 
 .login-form-header {
@@ -2107,7 +2172,7 @@ select.form-control {
 .login-form-header h2 {
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--gov-navy-900);
+  color: var(--text-heading);
 }
 
 .login-form-header p {
@@ -2129,7 +2194,7 @@ select.form-control {
   align-items: center;
   gap: 5px;
   padding: 10px 8px;
-  background: #F8FAFC;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -2141,17 +2206,17 @@ select.form-control {
 }
 
 .role-btn:hover {
-  background: #EFF6FF;
-  border-color: var(--gov-navy-700);
-  color: var(--gov-navy-900);
+  background: var(--bg-card-hover);
+  border-color: var(--accent-primary);
+  color: var(--text-heading);
 }
 
 .role-btn.active {
-  background: #EBF4FC;
-  border-color: var(--gov-navy-800);
-  color: var(--gov-navy-900);
+  background: var(--accent-primary-glow);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
   font-weight: 700;
-  box-shadow: 0 0 0 1px var(--gov-navy-800);
+  box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
 .role-btn-icon {
@@ -2168,11 +2233,11 @@ select.form-control {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #FEE2E2;
-  border: 1px solid #FECACA;
+  background: var(--status-critical-bg);
+  border: 1px solid var(--status-critical-border);
   border-radius: var(--radius-sm);
   padding: 9px 12px;
-  color: #991B1B;
+  color: var(--status-critical-text);
   font-size: 0.82rem;
   margin-bottom: 14px;
 }
@@ -2182,7 +2247,7 @@ select.form-control {
   gap: 8px;
   align-items: flex-start;
   margin-top: 20px;
-  background: #F8FAFC;
+  background: var(--bg-secondary);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -2191,11 +2256,12 @@ select.form-control {
 }
 
 .login-demo-hint code {
-  background: #E2E8F0;
-  padding: 1px 4px;
+  background: var(--bg-input);
+  padding: 2px 6px;
   border-radius: 3px;
-  color: var(--gov-navy-900);
-  font-weight: 600;
+  color: var(--accent-primary);
+  font-weight: 700;
+  border: 1px solid var(--border-subtle);
 }
 
 /* ===== MODAL WINDOWS (ADMINISTRATIVE DIALOGS) ===== */

@@ -126,3 +126,245 @@ export const FALLBACK_STATES_SUMMARY = [
   { state: 'Jammu and Kashmir', avg_risk_score: 33, total_projects: 1920, total_sanctioned: 960000000, total_spent: 816000000, completed_count: 1570, completion_rate: 82, cost_overrun_pct: 5, risk_category: 'low', top_flagged_district: 'Srinagar', critical_count: 14 },
   { state: 'Ladakh', avg_risk_score: 17, total_projects: 210, total_sanctioned: 105000000, total_spent: 98700000, completed_count: 197, completion_rate: 94, cost_overrun_pct: 0, risk_category: 'low', top_flagged_district: 'Leh', critical_count: 0 }
 ];
+
+export const FALLBACK_ALERTS = [
+  {
+    alert_id: 'ALT-MPLADS-UP-VAR-001',
+    project_id: 'MPLADS-UP-VAR-2024-001',
+    risk_score: 88,
+    alert_type: 'fraud_anomaly',
+    severity: 'critical',
+    state: 'Uttar Pradesh',
+    district: 'Varanasi',
+    message: 'Budget Outlay Inflation (+28%) & Geo-Adjacency Spatial Duplicate Flagged within 12km',
+    explanation: 'Sub-District Community Health Center reflects significant cost variance against baseline; physical proximity matches sibling sanction.',
+    recipients: ['MP Office (Varanasi)', 'District Magistrate (Varanasi)', 'State Nodal Officer (Uttar Pradesh)', 'MoSPI Monitoring Wing'],
+    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    status: 'open',
+    current_owner: null,
+    status_history: []
+  },
+  {
+    alert_id: 'ALT-MPLADS-MH-NAG-042',
+    project_id: 'MPLADS-MH-NAG-2024-042',
+    risk_score: 79,
+    alert_type: 'contractor_concurrency',
+    severity: 'high',
+    state: 'Maharashtra',
+    district: 'Nagpur',
+    message: 'Rapid Multi-District Contractor Execution Concurrency (8 Active Sites simultaneously)',
+    explanation: 'Contractor allocated multiple simultaneous capital works exceeding certified technical execution capacity.',
+    recipients: ['District Planning Authority (Nagpur)', 'State Nodal Officer (Maharashtra)'],
+    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
+    status: 'acknowledged',
+    current_owner: 'district_auditor',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'district_auditor',
+        updated_at: new Date(Date.now() - 3600000 * 20).toISOString(),
+        notes: 'Audit flag recorded by District Planning Cell. Capacity statement sought from vendor.'
+      }
+    ]
+  },
+  {
+    alert_id: 'ALT-MPLADS-BR-PAT-118',
+    project_id: 'MPLADS-BR-PAT-2024-118',
+    risk_score: 82,
+    alert_type: 'timeline_drag',
+    severity: 'critical',
+    state: 'Bihar',
+    district: 'Patna',
+    message: 'Physical Milestone Lag: Project 640 Days Beyond Sanction Window with zero recent expenditure entries',
+    explanation: 'Primary School Science Block remains dormant without physical inspection verification or measurement book entries.',
+    recipients: ['MP Office (Patliputra)', 'District Magistrate (Patna)', 'State Vigilance Cell'],
+    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
+    status: 'investigating',
+    current_owner: 'patna_vigilance_team',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'district_auditor',
+        updated_at: new Date(Date.now() - 3600000 * 50).toISOString(),
+        notes: 'Flag acknowledged by District Collectorate.'
+      },
+      {
+        status: 'investigating',
+        updated_by: 'patna_vigilance_team',
+        updated_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+        notes: 'Special inspection squad ordered on-site to inspect foundations and verify asset existence.'
+      }
+    ]
+  },
+  {
+    alert_id: 'ALT-MPLADS-TN-CHE-089',
+    project_id: 'MPLADS-TN-CHE-2024-089',
+    risk_score: 64,
+    alert_type: 'procurement_variance',
+    severity: 'high',
+    state: 'Tamil Nadu',
+    district: 'Chennai',
+    message: 'Repetitive Sole-Bidder Contractor Allocation across 3 contiguous municipal wards',
+    explanation: 'Tender participation analysis indicates sole-bidder allotment without competitive quotation threshold adherence.',
+    recipients: ['State Nodal Department (Tamil Nadu)', 'District Planning Authority'],
+    created_at: new Date(Date.now() - 3600000 * 96).toISOString(),
+    status: 'resolved',
+    current_owner: 'state_nodal_officer',
+    resolved_by: 'state_nodal_officer',
+    resolved_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    resolution_notes: 'Retender conducted following state procurement guidelines. Transparent multi-bidder allotment confirmed.',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'district_auditor',
+        updated_at: new Date(Date.now() - 3600000 * 80).toISOString(),
+        notes: 'Tender documents recalled for review.'
+      },
+      {
+        status: 'investigating',
+        updated_by: 'state_investigator',
+        updated_at: new Date(Date.now() - 3600000 * 40).toISOString(),
+        notes: 'Examined procurement notices and bid logs.'
+      },
+      {
+        status: 'resolved',
+        updated_by: 'state_nodal_officer',
+        updated_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+        notes: 'Retender conducted following state procurement guidelines.'
+      }
+    ]
+  },
+  {
+    alert_id: 'ALT-MPLADS-KA-BLR-210',
+    project_id: 'MPLADS-KA-BLR-2024-210',
+    risk_score: 42,
+    alert_type: 'financial_velocity',
+    severity: 'medium',
+    state: 'Karnataka',
+    district: 'Bengaluru Urban',
+    message: 'Expenditure Velocity Clustering at Fiscal Quarter End (94% spent within final 5 days)',
+    explanation: 'Rapid tranche drawdown prior to fiscal year close flagged for milestone voucher reconciliation.',
+    recipients: ['District Planning Authority (Bengaluru Urban)'],
+    created_at: new Date(Date.now() - 3600000 * 120).toISOString(),
+    status: 'resolved',
+    current_owner: 'district_finance_officer',
+    resolved_by: 'district_finance_officer',
+    resolved_at: new Date(Date.now() - 3600000 * 30).toISOString(),
+    resolution_notes: 'Vouchers reconciled against verified completion certificate and geotagged plant installation photo.',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'district_finance_officer',
+        updated_at: new Date(Date.now() - 3600000 * 90).toISOString(),
+        notes: 'Audit initiated for voucher reconciliation.'
+      },
+      {
+        status: 'resolved',
+        updated_by: 'district_finance_officer',
+        updated_at: new Date(Date.now() - 3600000 * 30).toISOString(),
+        notes: 'Vouchers verified with photographic evidence.'
+      }
+    ]
+  },
+  {
+    alert_id: 'ALT-MPLADS-OD-JAJ-157',
+    project_id: 'WS/MP138/2023-2024/15732',
+    risk_score: 98,
+    alert_type: 'fraud_anomaly',
+    severity: 'critical',
+    state: 'Odisha',
+    district: 'Jajpur',
+    message: 'Same-district duplicate work detected at matching location; multi-factor structural anomaly',
+    explanation: 'Duplicate sanction identified at identical village coordinates with overlapping contractor billing.',
+    recipients: ['MP Office (Odisha)', 'District Magistrate (Jajpur)', 'State Nodal Officer (Odisha)', 'MoSPI Monitoring Wing'],
+    created_at: new Date(Date.now() - 3600000 * 15).toISOString(),
+    status: 'open',
+    current_owner: null,
+    status_history: []
+  },
+  {
+    alert_id: 'ALT-MPLADS-GJ-AHM-073',
+    project_id: 'MPLADS-GJ-AHM-2024-073',
+    risk_score: 72,
+    alert_type: 'procurement_variance',
+    severity: 'high',
+    state: 'Gujarat',
+    district: 'Ahmedabad',
+    message: 'Single Agency Monopolization across 4 Consecutive Anganwadi Works',
+    explanation: 'Contract awards demonstrate non-competitive tender distribution patterns within sub-divisional jurisdiction.',
+    recipients: ['District Planning Authority (Ahmedabad)', 'State Vigilance Cell (Gujarat)'],
+    created_at: new Date(Date.now() - 3600000 * 36).toISOString(),
+    status: 'acknowledged',
+    current_owner: 'district_planner_ahm',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'district_planner_ahm',
+        updated_at: new Date(Date.now() - 3600000 * 18).toISOString(),
+        notes: 'Acknowledged. Procurement files called for scrutiny.'
+      }
+    ]
+  },
+  {
+    alert_id: 'ALT-MPLADS-WB-KOL-055',
+    project_id: 'MPLADS-WB-KOL-2024-055',
+    risk_score: 85,
+    alert_type: 'timeline_drag',
+    severity: 'critical',
+    state: 'West Bengal',
+    district: 'Kolkata',
+    message: 'Extreme Milestone Stagnation: Bridge Approach Road Discrepancy',
+    explanation: 'Physical progress reported at 90% while structural inspection records indicate sub-base incomplete.',
+    recipients: ['State Nodal Department (West Bengal)', 'District Magistrate (Kolkata)'],
+    created_at: new Date(Date.now() - 3600000 * 60).toISOString(),
+    status: 'investigating',
+    current_owner: 'state_investigator_wb',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'nodal_officer_wb',
+        updated_at: new Date(Date.now() - 3600000 * 45).toISOString(),
+        notes: 'Flag acknowledged by State Nodal Department.'
+      },
+      {
+        status: 'investigating',
+        updated_by: 'state_investigator_wb',
+        updated_at: new Date(Date.now() - 3600000 * 20).toISOString(),
+        notes: 'Joint engineering inspection squad dispatched.'
+      }
+    ]
+  },
+  {
+    alert_id: 'ALT-MPLADS-RJ-JAI-102',
+    project_id: 'MPLADS-RJ-JAI-2024-102',
+    risk_score: 55,
+    alert_type: 'financial_velocity',
+    severity: 'medium',
+    state: 'Rajasthan',
+    district: 'Jaipur',
+    message: 'Disbursement Spurt Prior to Project Dormancy',
+    explanation: 'Substantial payment tranche disbursed within 48 hours of scheme financial year end.',
+    recipients: ['District Planning Authority (Jaipur)'],
+    created_at: new Date(Date.now() - 3600000 * 100).toISOString(),
+    status: 'resolved',
+    current_owner: 'jaipur_audit_officer',
+    resolved_by: 'jaipur_audit_officer',
+    resolved_at: new Date(Date.now() - 3600000 * 16).toISOString(),
+    resolution_notes: 'Physical measurement book entries and engineer milestone clearance reconciled and cleared.',
+    status_history: [
+      {
+        status: 'acknowledged',
+        updated_by: 'jaipur_audit_officer',
+        updated_at: new Date(Date.now() - 3600000 * 70).toISOString(),
+        notes: 'Voucher and inspection log audit commenced.'
+      },
+      {
+        status: 'resolved',
+        updated_by: 'jaipur_audit_officer',
+        updated_at: new Date(Date.now() - 3600000 * 16).toISOString(),
+        notes: 'Milestone clearance verified.'
+      }
+    ]
+  }
+];
+

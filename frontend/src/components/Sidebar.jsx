@@ -22,7 +22,7 @@ const EXECUTIVE_LINKS = [
 
 const ANALYTICS_LINKS = [
   { to: '/analytics-studio', icon: <IconAnalytics size={17} />, label: 'Custom Chart Studio' },
-  { to: '/analyze', icon: <IconInspect size={17} />, label: 'AI Project Risk Analyzer' },
+  { to: '/analyze', icon: <IconInspect size={17} />, label: 'Project Risk Analyzer' },
   { to: '/alerts', icon: <IconAlerts size={17} />, label: 'Alerts & Audit Flags' },
 ];
 

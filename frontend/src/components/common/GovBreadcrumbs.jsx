@@ -35,7 +35,7 @@ const ROUTE_CRUMBS = {
   '/analyze': [
     { label: 'Portal Home', to: '/overview' },
     { label: 'Risk Assessment', to: '/overview' },
-    { label: 'AI Project Risk & Anomaly Analyzer', active: true },
+    { label: 'Project Risk Analyzer', active: true },
   ],
   '/alerts': [
     { label: 'Portal Home', to: '/overview' },

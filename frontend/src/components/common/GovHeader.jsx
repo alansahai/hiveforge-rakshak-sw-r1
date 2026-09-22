@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout, getCurrentUser, getCurrentRole } from '../../api/client';
+import { useLanguage } from '../../context/LanguageContext';
 import {
   GovSealIcon,
   IconSun,
@@ -29,16 +30,26 @@ const ROLE_LABELS = {
 
 export default function GovHeader({ theme, onToggleTheme }) {
   const navigate = useNavigate();
-  const user = getCurrentUser();
-  const role = getCurrentRole();
+  const { language, setLanguage, t } = useLanguage();
+  const [user, setUser] = useState(getCurrentUser());
+  const [role, setRole] = useState(getCurrentRole());
   const [timeStr, setTimeStr] = useState('');
   const [fontSizeTier, setFontSizeTier] = useState(1); // 0 = 14.5px, 1 = 16px (default), 2 = 18px
+
+  useEffect(() => {
+    const onAuthChange = () => {
+      setUser(getCurrentUser());
+      setRole(getCurrentRole());
+    };
+    window.addEventListener('mplads_auth_changed', onAuthChange);
+    return () => window.removeEventListener('mplads_auth_changed', onAuthChange);
+  }, []);
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setTimeStr(
-        now.toLocaleString('en-IN', {
+        now.toLocaleString(language === 'hi' ? 'hi-IN' : 'en-IN', {
           timeZone: 'Asia/Kolkata',
           day: '2-digit',
           month: 'short',
@@ -53,7 +64,7 @@ export default function GovHeader({ theme, onToggleTheme }) {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [language]);
 
   const handleFontSizeChange = (tier) => {
     setFontSizeTier(tier);
@@ -65,7 +76,9 @@ export default function GovHeader({ theme, onToggleTheme }) {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/', { replace: true });
+    setUser(null);
+    setRole(null);
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -82,11 +95,32 @@ export default function GovHeader({ theme, onToggleTheme }) {
         <div className="gov-container gov-top-ribbon-inner">
           <div className="gov-top-left">
             <a href="#main-content" className="gov-skip-link">
-              Skip to Main Content
+              {t('skip_to_content')}
             </a>
           </div>
 
           <div className="gov-top-right">
+            {/* Language Switcher Toggle */}
+            <div className="gov-lang-switcher" role="group" aria-label="Language Selector">
+              <button
+                type="button"
+                className={`gov-lang-btn ${language === 'en' ? 'active' : ''}`}
+                onClick={() => setLanguage('en')}
+                aria-label="Switch language to English"
+              >
+                EN
+              </button>
+              <span className="gov-lang-divider" aria-hidden="true">|</span>
+              <button
+                type="button"
+                className={`gov-lang-btn ${language === 'hi' ? 'active' : ''}`}
+                onClick={() => setLanguage('hi')}
+                aria-label="हिंदी भाषा चुनें"
+              >
+                हिंदी
+              </button>
+            </div>
+
             {/* Live IST Clock */}
             <span className="gov-clock" aria-label="Current Standard Time">
               {timeStr || 'Connecting…'}
@@ -132,7 +166,7 @@ export default function GovHeader({ theme, onToggleTheme }) {
               aria-label="Toggle High Contrast Theme"
             >
               {theme === 'dark' ? <IconSun size={14} /> : <IconMoon size={14} />}
-              <span>{theme === 'dark' ? 'Standard Light' : 'High Contrast'}</span>
+              <span>{theme === 'dark' ? t('normal_contrast') : t('high_contrast')}</span>
             </button>
           </div>
         </div>
@@ -149,15 +183,31 @@ export default function GovHeader({ theme, onToggleTheme }) {
           >
             <GovSealIcon size={46} />
             <div className="gov-titles">
-              <div className="gov-title-hi">
-                सांसद स्थानीय क्षेत्र विकास योजना (एमपीलैड्स) — निगरानी पोर्टल
-              </div>
-              <h1 className="gov-title-en">
-                MPLADS Project Monitoring &amp; Anomaly Detection System
-              </h1>
-              <div className="gov-subtitle">
-                Parliamentary Constituency Development Scheme · AI Oversight &amp; Audit Engine
-              </div>
+              {language === 'hi' ? (
+                <>
+                  <div className="gov-title-hi">
+                    सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय | भारत सरकार
+                  </div>
+                  <h1 className="gov-title-en">
+                    सांसद स्थानीय क्षेत्र विकास योजना (एमपीलैड्स) निगरानी प्रणाली
+                  </h1>
+                  <div className="gov-subtitle">
+                    संसदीय क्षेत्र अवसंरचना निगरानी एवं व्यय जवाबदेही मंच
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="gov-title-hi">
+                    Ministry of Statistics &amp; Programme Implementation | Government of India
+                  </div>
+                  <h1 className="gov-title-en">
+                    MPLADS Project Monitoring System
+                  </h1>
+                  <div className="gov-subtitle">
+                    Parliamentary Constituency Infrastructure Surveillance &amp; Expenditure Ledger
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -171,7 +221,7 @@ export default function GovHeader({ theme, onToggleTheme }) {
                 title="Access Authorized Government Portal"
               >
                 <IconLock size={15} />
-                <span>Official Login / अधिकारी लॉगिन</span>
+                <span>{t('sign_in')}</span>
               </button>
             </div>
           ) : (
@@ -193,7 +243,7 @@ export default function GovHeader({ theme, onToggleTheme }) {
                 aria-label="Sign out"
               >
                 <IconLogOut size={15} />
-                <span className="gov-signout-label">Sign Out</span>
+                <span className="gov-signout-label">{t('sign_out')}</span>
               </button>
             </div>
           )}

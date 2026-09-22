@@ -165,10 +165,10 @@ export default function AnalyzeProject() {
       <div className="page-header">
         <h2>
           <IconInspect size={24} color="var(--gov-navy-800)" />
-          <span>AI-Assisted Project Anomaly &amp; Risk Appraisal Engine</span>
+          <span>Project Risk Appraisal &amp; Anomaly Engine</span>
         </h2>
         <p>
-          Simulate risk parameters, evaluate Isolation Forest feature deviations, inspect XGBoost fraud scores, and audit physical asset photo EXIF data
+          Simulate project risk parameters, evaluate baseline financial and schedule deviations, and inspect physical asset verification data
         </p>
       </div>
 
@@ -386,12 +386,12 @@ export default function AnalyzeProject() {
               {loading ? (
                 <>
                   <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                  <span>Evaluating Ensemble AI Governance Models…</span>
+                  <span>Analyzing project...</span>
                 </>
               ) : (
                 <>
                   <IconInspect size={16} />
-                  <span>Compute Anomaly &amp; Compliance Audit Score</span>
+                  <span>Analyze Project Risk</span>
                 </>
               )}
             </button>
@@ -547,17 +547,17 @@ export default function AnalyzeProject() {
                 </div>
               </div>
 
-              {/* TreeExplainer SHAP Feature Attribution */}
+              {/* Reasoning Behind Risk Flags & Factor Attribution */}
               {result.shap_explanations?.top_features?.length > 0 && (
                 <div className="panel">
                   <div className="panel-header" style={{ marginBottom: 10 }}>
                     <div>
                       <h3>
                         <IconInspect size={18} color="var(--gov-navy-800)" />
-                        <span>TreeExplainer SHAP Feature Attribution</span>
+                        <span>Reasoning Behind Risk Flags</span>
                       </h3>
                       <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                        Empirical attribution derived from machine learning gradient explainers
+                        Transparent breakdown of administrative and progress factors influencing the appraisal score
                       </p>
                     </div>
                   </div>
@@ -584,7 +584,7 @@ export default function AnalyzeProject() {
                               <span style={{ color: '#DC2626' }}>+{item.impact_points} pts</span>
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                              Value: {item.raw_value} · SHAP: +{item.contribution}
+                              Value: {item.raw_value} · Contribution: +{item.impact_points || item.contribution} pts
                             </div>
                           </div>
                         ))}
@@ -614,7 +614,7 @@ export default function AnalyzeProject() {
                               <span style={{ color: '#166534' }}>-{item.impact_points} pts</span>
                             </div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                              Value: {item.raw_value} · SHAP: {item.contribution}
+                              Value: {item.raw_value} · Contribution: -{item.impact_points || Math.abs(item.contribution)} pts
                             </div>
                           </div>
                         ))}
